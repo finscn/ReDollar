@@ -38,15 +38,14 @@
                 var gesture = this.gesturePool[name];
                 var d = Utils.cosSimilarity(gesture.vector, vector);
                 if (d < similarity) {
-                    similarity = d; // best (least) distance
-                    match = name; // unistroke
+                    similarity = d;
+                    match = name;
                     if (first) {
                         return match;
                     }
                 }
             }
-            // score : 1 / similarity;
-            console.log(similarity);
+            // console.log(similarity);
             return match;
         },
 

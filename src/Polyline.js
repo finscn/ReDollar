@@ -108,14 +108,13 @@
                 p[1] = qy;
             }
         },
-        // scales bbox uniformly for 1D, non-uniformly for 2D
         scaleTo: function(width, height) {
             height = height || width;
             var aabb = this.aabb;
             if (this.ratio1D) {
                 var longSide = Math.max(aabb[4], aabb[5]);
                 var shortSide = Math.min(aabb[4], aabb[5]);
-                var uniformly = shortSide / longSide <= this.ratio1D; // 1D or 2D gesture test
+                var uniformly = shortSide / longSide < this.ratio1D;
                 if (uniformly) {
                     var scaleX = width / longSide,
                         scaleY = height / longSide;
@@ -126,12 +125,6 @@
                 scaleY = height / aabb[5];
             this.scale(scaleX, scaleY);
         },
-        // scaleTo: function(width, height) {
-        //     height = height || width;
-        //     var scaleX = width / this.aabb[4],
-        //         scaleY = height / this.aabb[5];
-        //     this.scale(scaleX, scaleY);
-        // },
     };
 
 
