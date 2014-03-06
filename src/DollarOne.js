@@ -22,10 +22,10 @@
 
         threshold: Math.PI / 8,
         rotationInvariance: Math.PI / 4,
-
+        normalPointCount: 64,
+        normalSize: 256,
         recognize: function(points, first) {
-            var polyline = new Polyline(points);
-            polyline.rotationInvariance = this.rotationInvariance;
+            var polyline = this.createPolyline(points);
             polyline.init();
             var vector = polyline.vector;
 
@@ -45,14 +45,25 @@
             // console.log(similarity);
             return match;
         },
-
-        addGesture: function(name, polyline) {
-            polyline.name = name;
+        createPolyline: function(points) {
+            var polyline = new Polyline(points);
             polyline.rotationInvariance = this.rotationInvariance;
+            polyline.normalPointCount = this.normalPointCount;
+            polyline.normalSize = this.normalSize;
+            return polyline;
+        },
+
+        addGesture: function(name, points) {
+            var polyline = Array.isArray(points) ? this.createPolyline(points) : points;
+            polyline.name = name;
             polyline.init();
             this.gesturePool[name] = polyline;
         },
         removeGesture: function(name) {
+            if (!name) {
+                this.gesturePool = {};
+                return;
+            }
             delete this.gesturePool[name];
         }
     };

@@ -8,8 +8,7 @@
         this.points = points || [];
     };
 
-    var CONST = ns.CONST,
-        Utils = ns.Utils;
+    var Utils = ns.Utils;
 
     var proto = {
         constructor: Polyline,
@@ -18,19 +17,23 @@
         points: null,
         origPoints: null,
         rotationInvariance: 0,
-        ratio1D: 0,
+        ratio1D: 0.1,
+        originX: 0,
+        originY: 0,
+        normalPointCount : 64,
+        normalSize: 256,
         init: function() {
             this.origPoints = this.points;
-            this.points = Utils.resample(this.origPoints, CONST.normalPointCount);
+            this.points = Utils.resample(this.origPoints, this.normalPointCount);
             this.pointCount = this.points.length;
 
             this.firstPoint = this.points[0];
             this.aabb = Utils.getAABB(this.points);
             this.centroid = this.getCentroid();
             this.angle = this.indicativeAngle();
-            this.translateTo(CONST.origin[0], CONST.origin[1]);
+            this.translateTo(this.originX, this.originY);
             this.rotateBy(-this.angle);
-            this.scaleTo(CONST.normalSize);
+            this.scaleTo(this.normalSize);
             this.vector = this.vectorize();
         },
 
@@ -49,7 +52,7 @@
         },
 
         vectorize: function() {
-            var sum = 0.0;
+            var sum = 0;
             var vector = [];
             var len = this.pointCount;
             for (var i = 0; i < len; i++) {

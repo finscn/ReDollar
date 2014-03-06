@@ -8,10 +8,6 @@
         RAD_TO_DEG: 180 / Math.PI,
         HALF_PI: Math.PI / 2,
         DOUBLE_PI: Math.PI * 2,
-
-        origin: [0, 0],
-        normalPointCount: 64,
-        normalSize: 256,
     };
 
     var Utils = ns.Utils = {
