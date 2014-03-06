@@ -78,7 +78,7 @@ var game = new Game({
                     if (NormalPoints) {
                         drawPoly(context, NormalPoints, "lightgreen", tx, ty);
                         context.fillStyle = "blue";
-                        context.fillText((MatchGesture || "( NO  Match )") + "   " + recognizeTime + "ms", 10, 50);
+                        context.fillText((MatchGesture || "( Unknown )") + "   " + recognizeTime + "ms", 10, 50);
                     }
                     context.lineWidth = 4;
                     drawPoly(context, Points, "blue", 0, 0);
