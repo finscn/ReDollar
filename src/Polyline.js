@@ -32,7 +32,6 @@
             this.rotateBy(-this.angle);
             this.scaleTo(CONST.normalSize);
             this.vector = this.vectorize();
-
         },
 
         indicativeAngle: function() {
@@ -48,6 +47,7 @@
         length: function() {
             return Utils.polylineLength(this.points);
         },
+
         vectorize: function() {
             var sum = 0.0;
             var vector = [];
@@ -66,6 +66,7 @@
             }
             return vector;
         },
+
         getCentroid: function() {
             var x = 0,
                 y = 0;
@@ -99,6 +100,7 @@
                 p[1] = qy;
             }
         },
+
         scale: function(scaleX, scaleY) {
             for (var i = 0; i < this.pointCount; i++) {
                 var p = this.points[i];
@@ -108,6 +110,7 @@
                 p[1] = qy;
             }
         },
+
         scaleTo: function(width, height) {
             height = height || width;
             var aabb = this.aabb;

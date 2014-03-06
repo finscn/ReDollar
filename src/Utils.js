@@ -38,15 +38,37 @@
             }
             return [minX, minY, maxX, maxY, maxX - minX, maxY - minY];
         },
-        cosSimilarity: function(v1, v2) {
+
+        // dot = [vector1[i] * vector2[i] for i in range(vector1)]
+        // sum_vector1 += sum_vector1 + (vector1[i]*vector1[i] for i in range(vector1))
+        // sum_vector2 += sum_vector2 + (vector2[i]*vector2[i] for i in range(vector2))
+        // dot/( Math.sqrt(sum_vector1*sum_vector2) )
+
+        cosSimilarity: function(vector1, vector2) {
+            var dot = 0;
+            var sum1 = 0,
+                sum2 = 0;
+            for (var i = 0; i < vector1.length; i++) {
+                var v1 = vector1[i],
+                    v2 = vector2[i];
+                dot += v1 * v2;
+                sum1 += v1 * v1;
+                sum2 += v2 * v2;
+            }
+            return dot / Math.sqrt(sum1 * sum2);
+        },
+
+        cosDistance: function(vector1, vector2) {
+            // return 1-Utils.cosSimilarity(vector1,vector2);
             var a = 0;
             var b = 0;
-            for (var i = 0; i < v1.length; i += 2) {
-                a += v1[i] * v2[i] + v1[i + 1] * v2[i + 1];
-                b += v1[i] * v2[i + 1] - v1[i + 1] * v2[i];
+            for (var i = 0; i < vector1.length; i += 2) {
+                a += vector1[i] * vector2[i] + vector1[i + 1] * vector2[i + 1];
+                b += vector1[i] * vector2[i + 1] - vector1[i + 1] * vector2[i];
             }
             var angle = Math.atan(b / a);
-            return Math.acos(a * Math.cos(angle) + b * Math.sin(angle));
+            var d = Math.acos(a * Math.cos(angle) + b * Math.sin(angle));
+            return d;
         },
 
         polylineLength: function(points) {

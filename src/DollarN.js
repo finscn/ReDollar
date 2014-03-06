@@ -1,5 +1,7 @@
 "use strict";
 
+// Coming Soon ...
+
 (function(exports, undefined) {
 
     var ns = exports.RD = exports.RD || {};
@@ -19,12 +21,12 @@
         rotationInvariance: 0,
 
         recognize: function(points) {
-            // TODO 
+            // TODO
         },
 
     };
 
-    var superProto=DollarOne.prototype;
+    var superProto = DollarOne.prototype;
     for (var p in superProto) {
         DollarN.prototype[p] = superProto[p];
     }

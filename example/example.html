@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="KOK">
 
-    <title>Test</title>
+    <title>$1 Example</title>
 
     <script type="text/javascript">
     </script>
@@ -19,11 +19,17 @@
     <script src="../src/Utils.js"></script>
     <script src="../src/Polyline.js"></script>
     <script src="../src/DollarOne.js"></script>
+    <script src="../src/DefaultOne.js"></script>
 
     <style type="text/css">
     </style>
     <script type="text/javascript">
     var game;
+
+    var dollarOne = new RD.DollarOne({
+
+    });
+    RD.applyDefaultOne(dollarOne);
 
     function init() {
         initTouchEvent();
@@ -52,7 +58,7 @@
                         context.fillRect(0, 0, this.width, this.height);
                         var tx = 300,
                             ty = 200;
-                        var gestures = RD.$1.gesturePool;
+                        var gestures = dollarOne.gesturePool;
                         // var names = Object.keys(gestures);
                         // names.forEach(function(n, idx) {
                         //     if (idx != 0) {
@@ -91,7 +97,7 @@
     var gi = 0;
 
     function initTouchEvent() {
-        var useTouch="ontouchstart" in window;
+        var useTouch = "ontouchstart" in window;
         var start = "mousedown",
             move = "mousemove",
             end = "mouseup";
@@ -105,15 +111,15 @@
         document.addEventListener(start, function(event) {
             Points.length = 0;
             touched = true;
-            touch.x = useTouch?event.changedTouches[0].pageX:event.pageX;
-            touch.y = useTouch?event.changedTouches[0].pageY:event.pageY;
+            touch.x = useTouch ? event.changedTouches[0].pageX : event.pageX;
+            touch.y = useTouch ? event.changedTouches[0].pageY : event.pageY;
             event.preventDefault();
         }, true);
 
         document.addEventListener(move, function() {
             if (touched) {
-                touch.x = useTouch?event.changedTouches[0].pageX:event.pageX;
-                touch.y = useTouch?event.changedTouches[0].pageY:event.pageY;
+                touch.x = useTouch ? event.changedTouches[0].pageX : event.pageX;
+                touch.y = useTouch ? event.changedTouches[0].pageY : event.pageY;
             }
             event.preventDefault();
         }, true);
@@ -122,10 +128,10 @@
             touched = false;
             if (Points.length > 10) {
                 var t = Date.now();
-                var m = RD.$1.recognize(Points, !true);
+                var m = dollarOne.recognize(Points, !true);
                 console.log(gi+++":   " + m)
                 var polyline = new RD.Polyline(Points);
-                polyline.rotationInvariance = RD.$1.rotationInvariance;
+                polyline.rotationInvariance = dollarOne.rotationInvariance;
                 polyline.init();
                 Points.p = polyline.points;
                 Points.m = m;
