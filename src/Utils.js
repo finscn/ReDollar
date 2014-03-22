@@ -97,7 +97,7 @@
                 } else {
                     D += d;
                     p1 = p2;
-                    i++
+                    i++;
                 }
             }
             if (newPoints.length == n - 1) {

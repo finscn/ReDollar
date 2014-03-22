@@ -1,6 +1,6 @@
 Config.width = 800;
 Config.height = 500;
-Config.loadDefaultGesture = false;
+Config.loadDefaultGesture = true;
 
 var dollarOne = new RD.DollarOne({
 
@@ -8,7 +8,6 @@ var dollarOne = new RD.DollarOne({
 if (Config.loadDefaultGesture) {
     RD.applyDefaultOne(dollarOne);
 }
-
 var game = new Game({
     width: Config.width,
     height: Config.height,

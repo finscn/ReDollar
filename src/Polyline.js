@@ -17,10 +17,11 @@
         points: null,
         origPoints: null,
         rotationInvariance: 0,
+        ignoreRotate: false,
         ratio1D: 0.1,
         originX: 0,
         originY: 0,
-        normalPointCount : 64,
+        normalPointCount: 64,
         normalSize: 256,
         init: function() {
             this.origPoints = this.points;
@@ -28,23 +29,28 @@
             this.pointCount = this.points.length;
 
             this.firstPoint = this.points[0];
-            this.aabb = Utils.getAABB(this.points);
             this.centroid = this.getCentroid();
             this.angle = this.indicativeAngle();
             this.translateTo(this.originX, this.originY);
-            this.rotateBy(-this.angle);
+            // if (this.angle){
+                this.rotateBy(-this.angle);
+            // }
+            this.aabb = Utils.getAABB(this.points);
             this.scaleTo(this.normalSize);
             this.vector = this.vectorize();
         },
 
         indicativeAngle: function() {
+            // if (this.ignoreRotate){
+            //     return 0;
+            // }
+            var iAngle = Math.atan2(this.firstPoint[1] - this.centroid[1], this.firstPoint[0] - this.centroid[0]);
             if (this.rotationInvariance) {
                 var r = this.rotationInvariance;
-                var iAngle = Math.atan2(this.firstPoint[1], this.firstPoint[0]);
                 var baseOrientation = r * Math.floor((iAngle + r / 2) / r);
                 return iAngle - baseOrientation;
             }
-            return Math.atan2(this.firstPoint[1] - this.centroid[1], this.firstPoint[0] - this.centroid[0]);
+            return iAngle;
         },
 
         length: function() {
@@ -83,10 +89,12 @@
         },
         translateTo: function(x, y) {
             var c = this.centroid;
+            c[0]-=x;
+            c[1]-=y;
             for (var i = 0; i < this.pointCount; i++) {
                 var p = this.points[i];
-                var qx = p[0] - c[0] + x;
-                var qy = p[1] - c[1] + y;
+                var qx = p[0] - c[0];
+                var qy = p[1] - c[1];
                 p[0] = qx;
                 p[1] = qy;
             }

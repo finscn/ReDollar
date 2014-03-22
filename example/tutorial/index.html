@@ -22,24 +22,26 @@
         top:2px;
         right:2px;
     }
-    #code {
-        width:600px;
-        height:100px;
+    #toolbar button {
+        display: block;
+        font-size:20px;
+        padding: 5px 5px;
+        margin:10px 5px;
     }
     </style>
 
-    <script src="../src/Utils.js"></script>
-    <script src="../src/Polyline.js"></script>
-    <script src="../src/DollarOne.js"></script>
-    <script src="../src/DefaultOne.js"></script>
+    <script src="../../src/Utils.js"></script>
+    <script src="../../src/Polyline.js"></script>
+    <script src="../../src/DollarOne.js"></script>
+    <script src="../../src/DefaultOne.js"></script>
 
-    <script src="./tiny-game.js"></script>
+    <script src="../tiny-game.js"></script>
     <script src="./main.js"></script>
 
     <script type="text/javascript">
     var Records = {};
     var Points = [];
-    var NormalPoints = null;
+    var polyline, Centroid;
     var MatchGesture = null;
     var TouchInfo = {
         touched: false,
@@ -49,98 +51,35 @@
     var recognizeTime = 0;
 
 
-    var WaitingForRecord = [
-        "circle",
-        "triangle",
-        "rectangle",
-        "star",
-        "flash",
-        "check",
-        "V",
-        "Z",
-        "S",
-        "8",
-    ];
-
     function init() {
         loadGesture();
-
-        createGestureList();
         game.init();
-        enterRecord();
-        setTimeout(function() {
-            var checks = $name("gesture");
-            checks[0].checked = true;
-        }, 10)
     }
 
     function reset() {
+        step = 0;
         Points = [];
-        recognizeTime = 0;
-        NormalPoints = null;
-        MatchGesture = null;
+        polyline = null;
+        Centroid = null;
+        MatchGesture=null;
+        recognizeTime=0;
     }
 
-    function createGestureList() {
-        var template = [
-            '<div><input name="gesture" type="radio" value="',
-            'name',
-            '">',
-            'name',
-            '</div>'
-        ];
-        var html = [];
-        WaitingForRecord.forEach(function(g) {
-            template[1] = g;
-            template[3] = g;
-            var str = template.join("");
-            html.push(str);
-        });
-        $id("g-list").innerHTML = html.join("");
-    }
 
-    function getCheckOption(radios) {
-        radios = Array.prototype.slice.call(radios);
-        var value = null;
-        radios.some(function(r) {
-            if (r.checked) {
-                value = r.getAttribute("value");
-                return true;
-            }
-        });
-        // console.log(value)
-        return value;
-    }
-
-    function enterRecord() {
-        $id("g-list").style.visibility = "visible";
-        $id("saveBtn").style.visibility = "visible";
-        game.record = true;
-        reset();
-    }
-
-    function enterTest() {
-        $id("g-list").style.visibility = "hidden";
-        $id("saveBtn").style.visibility = "hidden";
-        game.record = false;
+    function loadGesture() {
+        var r = window.localStorage.getItem("Records");
+        if (r) {
+            Records = JSON.parse(r);
+        }
         dollarOne.removeGesture();
         for (var name in Records) {
             dollarOne.addGesture(name, Records[name]);
         }
-        reset();
     }
 
-    function loadGesture() {
-        var r = window.localStorage.getItem("Records");
-        $id("code").value = r || "";
-        if (r) {
-            Records = JSON.parse(r);
-        }
-    }
 
     function saveGesture() {
-        var checks = $name("gesture");
-        var name = getCheckOption(checks);
+        var name = "tmpl";
         var polyline = dollarOne.createPolyline(Points);
         polyline.init();
         polyline.points.forEach(function(p) {
@@ -150,12 +89,31 @@
         Records[name] = polyline.points;
         var str = JSON.stringify(Records);
         window.localStorage.setItem("Records", str);
-        $id("code").value = str;
         // console.log(name, Points)
+
+        dollarOne.removeGesture();
+        for (var name in Records) {
+            dollarOne.addGesture(name, Records[name]);
+        }
+    }
+
+    function testGesture(){
+        var t = Date.now();
+        MatchGesture = dollarOne.recognize(Points);
+        recognizeTime = Date.now() - t;
+        console.log(MatchGesture,recognizeTime)
+        if (!MatchGesture){
+            MatchGesture=false;
+        }
     }
 
     function addRecorded(name, points) {
         Records[name] = points;
+    }
+
+    function removeGesture(){
+        removeRecorded();
+        dollarOne.removeGesture();
     }
 
     function removeRecorded(name) {
@@ -234,7 +192,63 @@
     function $name(name) {
         return document.getElementsByName(name);
     }
-    
+
+    function resample() {
+        if (polyline) {
+            polyline.origPoints = polyline.points;
+            polyline.points = RD.Utils.resample(polyline.origPoints, polyline.normalPointCount);
+            polyline.pointCount = polyline.points.length;
+            Points = polyline.points;
+        }
+    }
+
+    var step = 0;
+
+    function resample() {
+        if (polyline) {
+            step++;
+            polyline.origPoints = polyline.points;
+            polyline.points = RD.Utils.resample(polyline.origPoints, polyline.normalPointCount);
+            polyline.pointCount = polyline.points.length;
+            Points = polyline.points;
+        }
+    }
+
+    function centroid() {
+        if (polyline) {
+            step++;
+
+            polyline.firstPoint = polyline.points[0];
+            polyline.aabb = RD.Utils.getAABB(polyline.points);
+            polyline.centroid = polyline.getCentroid();
+            Centroid = polyline.centroid;
+        }
+    }
+
+    function translateTo() {
+        if (polyline) {
+            step++;
+
+            polyline.angle = polyline.indicativeAngle();
+            polyline.translateTo(polyline.originX, polyline.originY);
+            Centroid = [polyline.originX, polyline.originY];
+        }
+    }
+
+    function rotate() {
+        if (polyline) {
+            step++;
+            polyline.rotateBy(-polyline.angle);
+        }
+    }
+
+    function scale() {
+        if (polyline) {
+            step++;
+            polyline.scaleTo(polyline.normalSize);
+            polyline.vector = polyline.vectorize();
+        }
+    }
     </script>
 
 
@@ -245,21 +259,20 @@
     <canvas id="canvas"></canvas>
 
     <div id="toolbar">
-        <div>
-            <input id="testBtn" type="button" value="Test" onclick="enterTest();">
-        </div>
-        <hr/>
-        <div>
-            <input id="recordBtn" type="button" value="Record" onclick="enterRecord();">
-        </div>
-        <div id="g-list">
-        </div>
-        <input id="saveBtn" type="button" value="Save" onclick="saveGesture();">
+        <button type="button"  onclick="window.location.reload();">Reload</button>
+        <hr>
+        <button type="button"  onclick="resample();">resample</button>
+        <button type="button"  onclick="centroid();">centroid</button>
+        <button type="button"  onclick="translateTo();">translate</button>
+        <button type="button"  onclick="rotate();">rotate</button>
+        <button type="button"  onclick="scale();">scale</button>
+        <hr>
+        <button type="button"  onclick="testGesture();">test</button>
+        <hr>
+        <button type="button"  onclick="saveGesture();">save</button>
+        <button type="button"  onclick="removeGesture();">remove</button>
     </div>
 
-    <div id="output">
-        <textarea id="code"></textarea>
-    </div>
 </body>
 
 </html>

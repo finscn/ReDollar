@@ -1,0 +1,267 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+
+    <meta name='apple-touch-fullscreen' content='yes'>
+    <meta name='format-detection' content='telephone=no'>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="KOK">
+
+    <title>$1 Example</title>
+    <style type="text/css">
+    #toolbar {
+        padding:10px;
+        font-size:24px;
+        line-height: 30px;
+        background: #ffffff;
+        border: 1px solid blue;
+        position: absolute;
+        top:2px;
+        right:2px;
+    }
+    #code {
+        width:600px;
+        height:100px;
+    }
+    </style>
+
+    <script src="../../src/Utils.js"></script>
+    <script src="../../src/Polyline.js"></script>
+    <script src="../../src/DollarOne.js"></script>
+    <script src="../../src/DefaultOne.js"></script>
+
+    <script src="../tiny-game.js"></script>
+    <script src="./main.js"></script>
+
+    <script type="text/javascript">
+    var Records = {};
+    var Points = [];
+    var NormalPoints = null;
+    var MatchGesture = null;
+    var TouchInfo = {
+        touched: false,
+        x: 0,
+        y: 0,
+    };
+    var recognizeTime = 0;
+
+
+    var WaitingForRecord = [
+        "circle",
+        "triangle",
+        "rectangle",
+        "star",
+        "flash",
+        "check",
+        "V",
+        "Z",
+        "S",
+        "8",
+    ];
+
+    function init() {
+        loadGesture();
+
+        createGestureList();
+        game.init();
+        enterRecord();
+        setTimeout(function() {
+            var checks = $name("gesture");
+            checks[0].checked = true;
+        }, 10)
+    }
+
+    function reset() {
+        Points = [];
+        recognizeTime = 0;
+        NormalPoints = null;
+        MatchGesture = null;
+    }
+
+    function createGestureList() {
+        var template = [
+            '<div><input name="gesture" type="radio" value="',
+            'name',
+            '">',
+            'name',
+            '</div>'
+        ];
+        var html = [];
+        WaitingForRecord.forEach(function(g) {
+            template[1] = g;
+            template[3] = g;
+            var str = template.join("");
+            html.push(str);
+        });
+        $id("g-list").innerHTML = html.join("");
+    }
+
+    function getCheckOption(radios) {
+        radios = Array.prototype.slice.call(radios);
+        var value = null;
+        radios.some(function(r) {
+            if (r.checked) {
+                value = r.getAttribute("value");
+                return true;
+            }
+        });
+        // console.log(value)
+        return value;
+    }
+
+    function enterRecord() {
+        $id("g-list").style.visibility = "visible";
+        $id("saveBtn").style.visibility = "visible";
+        game.record = true;
+        reset();
+    }
+
+    function enterTest() {
+        $id("g-list").style.visibility = "hidden";
+        $id("saveBtn").style.visibility = "hidden";
+        game.record = false;
+        // dollarOne.removeGesture();
+        for (var name in Records) {
+            dollarOne.addGesture(name, Records[name]);
+        }
+
+        reset();
+    }
+
+    function loadGesture() {
+        // return;
+        var r = window.localStorage.getItem("Records");
+        $id("code").value = r || "";
+        if (r) {
+            Records = JSON.parse(r);
+        }
+
+    }
+
+    function saveGesture() {
+        var checks = $name("gesture");
+        var name = getCheckOption(checks);
+        var polyline = dollarOne.createPolyline(Points);
+        polyline.init();
+        polyline.points.forEach(function(p) {
+            p[0] = (p[0] + game.width / 2) >> 0;
+            p[1] = (p[1] + game.height / 2) >> 0;
+        })
+        Records[name] = polyline.points;
+        var str = JSON.stringify(Records);
+        window.localStorage.setItem("Records", str);
+        $id("code").value = str;
+        // console.log(name, Points)
+    }
+
+    function addRecorded(name, points) {
+        Records[name] = points;
+    }
+
+    function removeRecorded(name) {
+        if (!name) {
+            Records = {};
+        } else {
+            delete Records[name];
+        }
+    }
+
+
+    function initTouchEvent(dom) {
+        dom = dom || document;
+
+        var useTouch = "ontouchstart" in window;
+        var start = "mousedown",
+            move = "mousemove",
+            end = "mouseup";
+        if (useTouch) {
+            start = "touchstart";
+            move = "touchmove";
+            end = "touchend";
+        }
+
+        dom.addEventListener(start, function(event) {
+            var touch = useTouch ? event.changedTouches[0] : event;
+            reset();
+            TouchInfo.touched = true;
+            TouchInfo.x = touch.clientX;
+            TouchInfo.y = touch.clientY;
+            event.preventDefault();
+        }, true);
+
+        dom.addEventListener(move, function() {
+            var touch = useTouch ? event.changedTouches[0] : event;
+
+            if (TouchInfo.touched) {
+                TouchInfo.x = touch.clientX;
+                TouchInfo.y = touch.clientY;
+            }
+            event.preventDefault();
+        }, true);
+
+        dom.addEventListener(end, function() {
+            TouchInfo.touched = false;
+            game.scene.afterDraw();
+            event.preventDefault();
+        }, true);
+
+    }
+
+    function drawPoly(context, vertices, color, tx, ty) {
+        tx = tx || 0;
+        ty = ty || 0;
+        if (color) {
+            context.strokeStyle = color;
+        }
+        var vertexCount = vertices.length;
+        var a = vertices[0];
+        var first = a;
+        context.beginPath();
+        context.moveTo(a[0] + tx, a[1] + ty);
+        for (var j = 1; j < vertexCount; j++) {
+            var a = vertices[j];
+            context.lineTo(a[0] + tx, a[1] + ty);
+        }
+        // context.lineTo(first[0], first[1]);
+        context.stroke()
+        context.closePath();
+    }
+
+    function $id(id) {
+        return document.getElementById(id);
+    }
+
+    function $name(name) {
+        return document.getElementsByName(name);
+    }
+    </script>
+
+
+</head>
+
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="toolbar">
+        <div>
+            <input id="testBtn" type="button" value="Test" onclick="enterTest();">
+        </div>
+        <hr/>
+        <div>
+            <input id="recordBtn" type="button" value="Record" onclick="enterRecord();">
+        </div>
+        <div id="g-list">
+        </div>
+        <input id="saveBtn" type="button" value="Save" onclick="saveGesture();">
+    </div>
+
+    <div id="output">
+        <textarea id="code"></textarea>
+    </div>
+</body>
+
+</html>

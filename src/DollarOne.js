@@ -53,6 +53,9 @@
             return polyline;
         },
 
+        getGesture: function(name) {
+            return this.gesturePool[name];
+        },
         addGesture: function(name, points) {
             var polyline = Array.isArray(points) ? this.createPolyline(points) : points;
             polyline.name = name;
