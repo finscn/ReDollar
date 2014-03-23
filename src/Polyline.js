@@ -30,13 +30,13 @@
 
             this.firstPoint = this.points[0];
             this.centroid = this.getCentroid();
-            this.angle = this.indicativeAngle();
             this.translateTo(this.originX, this.originY);
+            this.aabb = Utils.getAABB(this.points);
+            this.scaleTo(this.normalSize);
+            this.angle = this.indicativeAngle();
             // if (this.angle){
                 this.rotateBy(-this.angle);
             // }
-            this.aabb = Utils.getAABB(this.points);
-            this.scaleTo(this.normalSize);
             this.vector = this.vectorize();
         },
 
@@ -44,7 +44,8 @@
             // if (this.ignoreRotate){
             //     return 0;
             // }
-            var iAngle = Math.atan2(this.firstPoint[1] - this.centroid[1], this.firstPoint[0] - this.centroid[0]);
+            // var iAngle = Math.atan2(this.firstPoint[1] - this.centroid[1], this.firstPoint[0] - this.centroid[0]);
+            var iAngle = Math.atan2(this.firstPoint[1], this.firstPoint[0]);
             if (this.rotationInvariance) {
                 var r = this.rotationInvariance;
                 var baseOrientation = r * Math.floor((iAngle + r / 2) / r);
@@ -120,6 +121,8 @@
                 p[0] = qx;
                 p[1] = qy;
             }
+            // this.centroid[0] *= scaleX
+            // this.centroid[1] *= scaleY
         },
 
         scaleTo: function(width, height) {
