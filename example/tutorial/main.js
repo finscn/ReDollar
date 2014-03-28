@@ -41,7 +41,7 @@ var game = new Game({
             },
             render: function(context, timeStep, now) {
                 context.lineWidth = 1;
-                context.fillStyle = "#eeeeee";
+                context.fillStyle = "#f3f3f3";
                 context.fillRect(0, 0, this.width, this.height);
                 var tx = this.width / 2,
                     ty = this.height / 2;
