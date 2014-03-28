@@ -205,12 +205,18 @@ function loadGesture() {
 var gid = 0;
 
 function addGesture() {
+    if (!Points){
+        return;
+    }
     saveGesture(++gid);
     loadGesture();
     $id("gcount").innerHTML = gid;
 }
 
 function saveGesture(name) {
+    if (!Points){
+        return;
+    }
     Records[name] = Points;
     // var polyline = dollarOne.createPolyline(Points);
     // polyline.init();
