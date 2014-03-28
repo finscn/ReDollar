@@ -16,27 +16,36 @@
         name: null,
         points: null,
         origPoints: null,
-        rotationInvariance: 0,
         ignoreRotate: false,
-        ratio1D: 0.1,
         originX: 0,
         originY: 0,
-        normalPointCount: 64,
-        normalSize: 256,
-        init: function() {
-            this.origPoints = this.points;
-            this.points = Utils.resample(this.origPoints, this.normalPointCount);
-            this.pointCount = this.points.length;
 
+        ratio1D: 0.2,
+        rotationInvariance: Math.PI / 4,
+        normalPointCount: 40,
+        normalSize: 200,
+
+        init: function(transform) {
+            transform = transform !== false;
+
+            this.origPoints = this.points;
+            if (transform) {
+                this.points = Utils.resample(this.origPoints, this.normalPointCount);
+            }
+
+            this.pointCount = this.points.length;
             this.firstPoint = this.points[0];
             this.centroid = this.getCentroid();
             this.translateTo(this.originX, this.originY);
+
             this.aabb = Utils.getAABB(this.points);
-            this.scaleTo(this.normalSize);
-            this.angle = this.indicativeAngle();
-            // if (this.angle){
+            if (transform) {
+                this.scaleTo(this.normalSize);
+                this.angle = this.indicativeAngle();
+                // if (this.angle){
                 this.rotateBy(-this.angle);
-            // }
+                // }
+            }
             this.vector = this.vectorize();
         },
 
@@ -90,8 +99,8 @@
         },
         translateTo: function(x, y) {
             var c = this.centroid;
-            c[0]-=x;
-            c[1]-=y;
+            c[0] -= x;
+            c[1] -= y;
             for (var i = 0; i < this.pointCount; i++) {
                 var p = this.points[i];
                 var qx = p[0] - c[0];

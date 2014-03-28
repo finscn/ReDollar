@@ -20,10 +20,13 @@
     var proto = {
         constructor: DollarOne,
 
-        threshold: Math.PI / 8,
+        threshold: Math.PI / 10,
+
+        ratio1D: 0.2,
         rotationInvariance: Math.PI / 4,
-        normalPointCount: 64,
-        normalSize: 256,
+        normalPointCount: 40,
+        normalSize: 200,
+
         recognize: function(points, first) {
             var polyline = this.createPolyline(points);
             polyline.init();
@@ -47,6 +50,7 @@
         },
         createPolyline: function(points) {
             var polyline = new Polyline(points);
+            polyline.ratio1D = this.ratio1D;
             polyline.rotationInvariance = this.rotationInvariance;
             polyline.normalPointCount = this.normalPointCount;
             polyline.normalSize = this.normalSize;
@@ -56,10 +60,10 @@
         getGesture: function(name) {
             return this.gesturePool[name];
         },
-        addGesture: function(name, points) {
+        addGesture: function(name, points, transform) {
             var polyline = Array.isArray(points) ? this.createPolyline(points) : points;
             polyline.name = name;
-            polyline.init();
+            polyline.init(transform);
             this.gesturePool[name] = polyline;
         },
         removeGesture: function(name) {

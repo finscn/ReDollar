@@ -1,8 +1,12 @@
 Config.width = 800;
-Config.height = 500;
+Config.height = 600;
 
 var dollarOne = new RD.DollarOne({
-    threshold: Math.PI / 12
+    threshold: Math.PI / 10,
+    ratio1D: 0.2,
+    rotationInvariance: Math.PI / 4,
+    normalPointCount: 40,
+    normalSize: 200,
 });
 
 var game = new Game({
@@ -49,30 +53,23 @@ var game = new Game({
                 context.fillStyle = "#330000";
                 context.fillRect(tx - 3, ty - 3, 6, 6);
 
-                if (step == 5) {
-                    var size = dollarOne.normalSize;
-                    context.strokeStyle = "#666666";
-                    context.strokeRect(tx - size / 2, ty - size / 2, size, size);
-                }
-                if (MatchGesture) {
-                    context.fillStyle = "blue";
-                    context.fillText(MatchGesture + "   " + recognizeTime + "ms", 10, 50);
-                } else if (MatchGesture === false) {
-                    context.fillStyle = "red";
-                    context.fillText("null", 10, 50);
-                }
+                // if (step >=4 ) {
+                //     var size = dollarOne.normalSize;
+                //     context.strokeStyle = "#666666";
+                //     context.strokeRect(tx - size / 2, ty - size / 2, size, size);
+                // }
 
                 // if (Points.length > 0) {
 
-                // MatchGesture = "tmpl"
-                var g = dollarOne.getGesture("tmpl");
-                if (g) {
+                var pool=dollarOne.gesturePool;
+                var names=Object.keys(pool);
+                if (names.length==1) {
+                    var g=dollarOne.getGesture(names[0]);
                     context.lineWidth = 2;
-                    if (MatchGesture) {
-                        drawPoly(context, g.points, "#00cc00", tx, ty);
-                    } else {
-                        drawPoly(context, g.points, "#bb9999", tx, ty);
-                    }
+                    drawPoly(context, g.points, "#bb9999", tx, ty);
+                    // var size=g.normalSize;
+                    // console.log(size)
+                    // context.strokeRect(-size/2+tx,-size/2+ty,size,size)
                 }
 
                 if (step >= 3) {
@@ -98,6 +95,24 @@ var game = new Game({
                 if (step >= 3) {
                     context.restore();
                 }
+                var x = 0,
+                    y = 0;
+                var size=80, t=4;
+                context.lineWidth=t;
+                context.strokeStyle="red";
+                for (var name in GestureImgs) {
+                    var img = GestureImgs[name];
+                    context.drawImage(img, x, y);
+                    if (MatchGesture==name){
+                        context.strokeRect(x+t/2,y+t/2,size-t,size-t);
+                        context.fillText(recognizeTime + "ms", x+t/2, 100);
+                    }
+                    x += size+10;
+                }
+                if (MatchGesture === false) {
+                    context.fillText("No Match", 10, 100);
+                }
+
                 // }
             }
         }
@@ -138,6 +153,33 @@ function reset() {
     recognizeTime = 0;
 }
 
+function createGestureImg(polyline, size) {
+    size = size || 80;
+    var aabb = RD.Utils.getAABB(polyline.points);
+    var os = Math.max(aabb[4], aabb[5]);
+    var scale = Math.min(1, size / os) * 0.7;
+    var tx = size / 2,
+        ty = size / 2;
+
+    var canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    canvas.retinaResolutionEnabled = false;
+    var context = canvas.getContext("2d");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, size, size);
+    context.strokeStyle = "#000000";
+    context.strokeRect(0, 0, size, size);
+    context.lineWidth = 10;
+    context.save();
+    context.translate(tx, ty);
+    context.scale(scale, scale);
+    drawPoly(context, polyline.points, "#3366ff");
+    context.restore();
+    return canvas;
+}
+
+var GestureImgs = {};
 
 function loadGesture() {
     var r = window.localStorage.getItem("Records");
@@ -151,6 +193,12 @@ function loadGesture() {
         // console.log(name,Records[name])
         dollarOne.addGesture(name, Records[name]);
     }
+    var pool = dollarOne.gesturePool;
+    for (var name in pool) {
+        var g = pool[name];
+        var img = createGestureImg(g);
+        GestureImgs[name] = img;
+    }
     $id("gcount").innerHTML = gid;
 }
 
@@ -158,19 +206,16 @@ var gid = 0;
 
 function addGesture() {
     saveGesture(++gid);
+    loadGesture();
     $id("gcount").innerHTML = gid;
 }
 
 function saveGesture(name) {
-    name = name || "tmpl";
+    Records[name] = Points;
     // var polyline = dollarOne.createPolyline(Points);
     // polyline.init();
-    // polyline.points.forEach(function(p) {
-    //     p[0] = (p[0] + game.width / 2) >> 0;
-    //     p[1] = (p[1] + game.height / 2) >> 0;
-    // })
     // Records[name] = polyline.points;
-    Records[name] = Points;
+
     var str = JSON.stringify(Records);
     window.localStorage.setItem("Records", str);
     dollarOne.addGesture(name, polyline.points);
@@ -199,12 +244,14 @@ function removeGesture() {
     removeRecorded();
     dollarOne.removeGesture();
     gid = 0;
+    Points=[];
     $id("gcount").innerHTML = gid;
 }
 
 function removeRecorded(name) {
     if (!name) {
         Records = {};
+        GestureImgs = {};
     } else {
         delete Records[name];
     }
@@ -332,7 +379,6 @@ function scale() {
     if (polyline) {
         step++;
         polyline.scaleTo(polyline.normalSize);
-        polyline.vector = polyline.vectorize();
     }
 }
 
@@ -341,6 +387,7 @@ function rotate() {
         step++;
         polyline.angle = polyline.indicativeAngle();
         polyline.rotateBy(-polyline.angle);
+        polyline.vector = polyline.vectorize();
     }
 }
 

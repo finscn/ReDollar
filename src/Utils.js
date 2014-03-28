@@ -24,9 +24,6 @@
                 maxY = -Infinity;
             for (var i = 0, len = points.length; i < len; i++) {
                 var p = points[i];
-                if (!p) {
-                    console.log(points)
-                }
                 minX = Math.min(minX, p[0]);
                 maxX = Math.max(maxX, p[0]);
                 minY = Math.min(minY, p[1]);
