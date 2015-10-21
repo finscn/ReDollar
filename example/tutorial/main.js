@@ -1,3 +1,5 @@
+"use strick";
+
 Config.width = 800;
 Config.height = 600;
 
@@ -34,8 +36,14 @@ var game = new Game({
             },
             update: function(timeStep, now) {
                 if (TouchInfo.touched && this.cooldown <= 0) {
-                    Points.push([TouchInfo.x, TouchInfo.y]);
-                    this.cooldown = 2;
+                    var dx = TouchInfo.x - TouchInfo.lastX;
+                    var dy = TouchInfo.y - TouchInfo.lastY;
+                    if (Math.abs(dx) + Math.abs(dy) > 10) {
+                        Points.push([TouchInfo.x, TouchInfo.y]);
+                        TouchInfo.lastX = TouchInfo.x;
+                        TouchInfo.lastY = TouchInfo.y;
+                    }
+                    this.cooldown = 0;
                 }
                 this.cooldown--;
             },
@@ -61,10 +69,10 @@ var game = new Game({
 
                 // if (Points.length > 0) {
 
-                var pool=dollarOne.gesturePool;
-                var names=Object.keys(pool);
-                if (names.length==1) {
-                    var g=dollarOne.getGesture(names[0]);
+                var pool = dollarOne.gesturePool;
+                var names = Object.keys(pool);
+                if (names.length == 1) {
+                    var g = dollarOne.getGesture(names[0]);
                     context.lineWidth = 2;
                     drawPoly(context, g.points, "#bb9999", tx, ty);
                     // var size=g.normalSize;
@@ -76,7 +84,7 @@ var game = new Game({
                     context.save();
                     context.translate(this.width / 2, this.height / 2);
                 }
-                if (Points && Points.length > 3) {
+                if (Points && Points.length > 0) {
                     context.globalAlpha = 0.6;
                     context.lineWidth = 4;
                     drawPoly(context, Points, "blue", 0, 0);
@@ -97,17 +105,18 @@ var game = new Game({
                 }
                 var x = 0,
                     y = 0;
-                var size=80, t=4;
-                context.lineWidth=t;
-                context.strokeStyle="red";
+                var size = 80,
+                    t = 4;
+                context.lineWidth = t;
+                context.strokeStyle = "red";
                 for (var name in GestureImgs) {
                     var img = GestureImgs[name];
                     context.drawImage(img, x, y);
-                    if (MatchGesture==name){
-                        context.strokeRect(x+t/2,y+t/2,size-t,size-t);
-                        context.fillText(recognizeTime + "ms", x+t/2, 100);
+                    if (MatchGesture == name) {
+                        context.strokeRect(x + t / 2, y + t / 2, size - t, size - t);
+                        context.fillText(recognizeTime + "ms", x + t / 2, 100);
                     }
-                    x += size+10;
+                    x += size + 10;
                 }
                 if (MatchGesture === false) {
                     context.fillText("No Match", 10, 100);
@@ -205,7 +214,7 @@ function loadGesture() {
 var gid = 0;
 
 function addGesture() {
-    if (!Points){
+    if (!Points) {
         return;
     }
     saveGesture(++gid);
@@ -214,7 +223,7 @@ function addGesture() {
 }
 
 function saveGesture(name) {
-    if (!Points){
+    if (!Points) {
         return;
     }
     Records[name] = Points;
@@ -250,7 +259,7 @@ function removeGesture() {
     removeRecorded();
     dollarOne.removeGesture();
     gid = 0;
-    Points=[];
+    Points = [];
     $id("gcount").innerHTML = gid;
 }
 
@@ -282,8 +291,10 @@ function initTouchEvent(dom) {
         var touch = useTouch ? event.changedTouches[0] : event;
         reset();
         TouchInfo.touched = true;
-        TouchInfo.x = touch.clientX;
-        TouchInfo.y = touch.clientY;
+        TouchInfo.lastX = -1000;
+        TouchInfo.lastY = -1000;
+        TouchInfo.x = touch.pageX;
+        TouchInfo.y = touch.pageY;
         event.preventDefault();
     }, true);
 
@@ -291,8 +302,8 @@ function initTouchEvent(dom) {
         var touch = useTouch ? event.changedTouches[0] : event;
 
         if (TouchInfo.touched) {
-            TouchInfo.x = touch.clientX;
-            TouchInfo.y = touch.clientY;
+            TouchInfo.x = touch.pageX;
+            TouchInfo.y = touch.pageY;
         }
         event.preventDefault();
     }, true);
