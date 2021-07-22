@@ -30,3 +30,13 @@ dollarOne.addGesture(name, gesturePoints);
 var matched = dollarOne.recognize(userPoints);
 
 ```
+
+
+---------------
+#### Reference
+
+http://depts.washington.edu/acelab/proj/dollar/index.html
+
+
+
+-
