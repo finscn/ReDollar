@@ -2,39 +2,56 @@
 
 Config.width = 800;
 Config.height = 600;
+var originalPoint = [0, 0]
 
-var dollarOne = new RD.DollarOne({
-    threshold: 0.3,
-    ratio1D: 0.2,
-    rotationInvariance: Math.PI / 4,
-    normalPointCount: 40,
-    normalSize: 200,
-});
+var gestureTool = new GestureTool()
+
+gestureTool.threshold = 0.3
+
+gestureTool.pointCount = 32
+gestureTool.orientationCount = 1
+gestureTool.ratioSensitive = false
+gestureTool.scaleSize = 200
+
+
+var Points = [];
+var RecordPoints = {};
+
+var CurrentGesture;
+var Centroid;
+var MatchGesture = null;
+var TouchInfo = {
+    touched: false,
+    x: 0,
+    y: 0,
+};
+var recognizeTime = 0;
+
 
 var game = new Game({
     width: Config.width,
     height: Config.height,
-    onInit: function() {
-        initTouchEvent(this.canvas);
-        var x = this.width / 2,
-            y = this.height / 2;
+    onInit: function () {
+        initTouchEvent(this.canvas)
+
+        originalPoint[0] = this.width / 2
+        originalPoint[1] = this.height / 2
 
         this.start();
     },
-    beforeStart: function() {
+    beforeStart: function () {
         this.context.font = "20px Arial";
         this.scene = {
             width: this.width,
             height: this.height,
             game: this,
             cooldown: 0,
-            afterDraw: function() {
-                if (Points.length > 6) {
-
-                    polyline = dollarOne.createPolyline(Points);
+            afterDraw: function () {
+                if (Points.length > 2) {
+                    CurrentGesture = gestureTool.createGesture(Points);
                 }
             },
-            update: function(timeStep, now) {
+            update: function (timeStep, now) {
                 if (TouchInfo.touched && this.cooldown <= 0) {
                     var dx = TouchInfo.x - TouchInfo.lastX;
                     var dy = TouchInfo.y - TouchInfo.lastY;
@@ -47,12 +64,14 @@ var game = new Game({
                 }
                 this.cooldown--;
             },
-            render: function(context, timeStep, now) {
+            render: function (context, timeStep, now) {
                 context.lineWidth = 1;
                 context.fillStyle = "#f3f3f3";
                 context.fillRect(0, 0, this.width, this.height);
-                var tx = this.width / 2,
-                    ty = this.height / 2;
+
+                var tx = originalPoint[0];
+                var ty = originalPoint[1];
+
                 var l = 400;
                 drawLine(context, [-l, 0], [l, 0], "#bbbbbb", tx, ty);
                 drawLine(context, [0, -l], [0, l], "#bbbbbb", tx, ty);
@@ -61,50 +80,41 @@ var game = new Game({
                 context.fillStyle = "#330000";
                 context.fillRect(tx - 3, ty - 3, 6, 6);
 
-                // if (step >=4 ) {
-                //     var size = dollarOne.normalSize;
-                //     context.strokeStyle = "#666666";
-                //     context.strokeRect(tx - size / 2, ty - size / 2, size, size);
-                // }
 
-                // if (Points.length > 0) {
-
-                var pool = dollarOne.gesturePool;
-                var names = Object.keys(pool);
+                var names = Object.keys(RecordPoints)
                 if (names.length == 1) {
-                    var g = dollarOne.getGesture(names[0]);
+                    var points = RecordPoints[names[0]]
                     context.lineWidth = 2;
-                    drawPoly(context, g.points, "#bb9999", tx, ty);
-                    // var size=g.normalSize;
-                    // console.log(size)
-                    // context.strokeRect(-size/2+tx,-size/2+ty,size,size)
+                    drawPoly(context, points, "#bb9999", tx, ty);
                 }
 
                 if (step >= 3) {
                     context.save();
-                    context.translate(this.width / 2, this.height / 2);
+                    context.translate(originalPoint[0], originalPoint[1]);
                 }
+
                 if (Points && Points.length > 0) {
                     context.globalAlpha = 0.6;
                     context.lineWidth = 4;
                     drawPoly(context, Points, "blue", 0, 0);
                     context.fillStyle = "red";
-                    Points.forEach(function(p) {
+                    Points.forEach(function (p) {
                         context.fillRect(p[0] - 4, p[1] - 4, 8, 8);
                     });
-                }
-                if (Centroid) {
-                    context.fillStyle = "darkgreen";
-                    context.fillRect(Centroid[0] - 5, Centroid[1] - 5, 10, 10);
-                    drawLine(context, Points[0], Centroid, "#6699ff");
+
+                    if (Centroid) {
+                        context.fillStyle = "darkgreen";
+                        context.fillRect(Centroid[0] - 5, Centroid[1] - 5, 10, 10);
+                        drawLine(context, Points[0], Centroid, "#6699ff");
+                    }
                 }
 
                 context.globalAlpha = 1;
                 if (step >= 3) {
                     context.restore();
                 }
-                var x = 0,
-                    y = 0;
+                var x = 4,
+                    y = 4;
                 var size = 80,
                     t = 4;
                 context.lineWidth = t;
@@ -136,36 +146,26 @@ var game = new Game({
 ///////////////////////////////
 
 
-var Records = {};
-var Points = [];
-var polyline, Centroid;
-var MatchGesture = null;
-var TouchInfo = {
-    touched: false,
-    x: 0,
-    y: 0,
-};
-var recognizeTime = 0;
 
 
 function init() {
-    loadGesture();
+    loadGestures();
     game.init();
 }
 
 function reset() {
     step = 0;
     Points = [];
-    polyline = null;
+    CurrentGesture = null;
     Centroid = null;
     MatchGesture = null;
     recognizeTime = 0;
 }
 
-function createGestureImg(polyline, size) {
+function createGestureImg(points, size) {
     size = size || 80;
-    var aabb = RD.Utils.getAABB(polyline.points);
-    var os = Math.max(aabb[4], aabb[5]);
+    var aabb = GestureUtils.computeAABB(points);
+    var os = Math.max(aabb[2], aabb[3]);
     var scale = Math.min(1, size / os) * 0.7;
     var tx = size / 2,
         ty = size / 2;
@@ -183,94 +183,80 @@ function createGestureImg(polyline, size) {
     context.save();
     context.translate(tx, ty);
     context.scale(scale, scale);
-    drawPoly(context, polyline.points, "#3366ff");
+    drawPoly(context, points, "#3366ff");
     context.restore();
     return canvas;
 }
 
 var GestureImgs = {};
 
-function loadGesture() {
-    var r = window.localStorage.getItem("Records");
-    if (r) {
-        Records = JSON.parse(r);
+function loadGestures() {
+
+    const rec = window.localStorage.getItem('RecordPoints')
+    if (rec) {
+        RecordPoints = JSON.parse(rec) || {}
     }
-    gid = 0;
-    dollarOne.removeGesture();
-    for (var name in Records) {
-        gid++
-        // console.log(name,Records[name])
-        dollarOne.addGesture(name, Records[name]);
-    }
-    var pool = dollarOne.gesturePool;
-    for (var name in pool) {
-        var g = pool[name];
-        var img = createGestureImg(g);
+
+    gestureTool.loadGestures()
+    var names = gestureTool.getAllGestureNames();
+    var count = names.length
+    names.forEach((name) => {
+        var points = RecordPoints[name]
+        var img = createGestureImg(points);
         GestureImgs[name] = img;
-    }
-    $id("gcount").innerHTML = gid;
+    })
+
+    $id("gcount").innerHTML = count;
 }
 
 var gid = 0;
 
 function addGesture() {
-    if (!Points) {
+    if (!CurrentGesture) {
         return;
     }
-    saveGesture(++gid);
-    loadGesture();
-    $id("gcount").innerHTML = gid;
-}
 
-function saveGesture(name) {
-    if (!Points) {
-        return;
+    var name = null; // prompt("手势名称", "");
+    if (!name) {
+        name = 'N_' + Object.keys(RecordPoints).length
     }
-    Records[name] = Points;
-    // var polyline = dollarOne.createPolyline(Points);
-    // polyline.init();
-    // Records[name] = polyline.points;
 
-    var str = JSON.stringify(Records);
-    window.localStorage.setItem("Records", str);
-    dollarOne.addGesture(name, polyline.points);
+    this.gestureTool.addGesture(name, CurrentGesture)
+    this.gestureTool.saveGestures();
 
-    // dollarOne.removeGesture();
-    // for (var name in Records) {
-    //     dollarOne.addGesture(name, Records[name]);
-    // }
+    RecordPoints[name] = CurrentGesture.points
+    window.localStorage.setItem('RecordPoints', JSON.stringify(RecordPoints))
+
+    var names = gestureTool.getAllGestureNames();
+    var count = names.length
+    $id("gcount").innerHTML = count;
 }
+
+
+function clearAllGestures() {
+    gestureTool.removeAllGestures();
+    gestureTool.saveGestures();
+
+    RecordPoints = {}
+    window.localStorage.setItem('RecordPoints', JSON.stringify(RecordPoints))
+
+    Points = [];
+    $id("gcount").innerHTML = 0;
+}
+
 
 function testGesture() {
+    if (!CurrentGesture) {
+        return
+    }
     var t = Date.now();
-    MatchGesture = dollarOne.recognize(Points);
+    CurrentGesture.vectorize()
+    MatchGesture = gestureTool.recognize(CurrentGesture.vector);
     recognizeTime = Date.now() - t;
     console.log(MatchGesture, recognizeTime)
     if (!MatchGesture) {
         MatchGesture = false;
     }
-}
-
-function addRecorded(name, points) {
-    Records[name] = points;
-}
-
-function removeGesture() {
-    removeRecorded();
-    dollarOne.removeGesture();
-    gid = 0;
-    Points = [];
-    $id("gcount").innerHTML = gid;
-}
-
-function removeRecorded(name) {
-    if (!name) {
-        Records = {};
-        GestureImgs = {};
-    } else {
-        delete Records[name];
-    }
-    window.localStorage.setItem("Records", "{}");
 }
 
 
@@ -287,7 +273,7 @@ function initTouchEvent(dom) {
         end = "touchend";
     }
 
-    dom.addEventListener(start, function(event) {
+    dom.addEventListener(start, function (event) {
         var touch = useTouch ? event.changedTouches[0] : event;
         reset();
         TouchInfo.touched = true;
@@ -298,7 +284,7 @@ function initTouchEvent(dom) {
         event.preventDefault();
     }, true);
 
-    dom.addEventListener(move, function() {
+    dom.addEventListener(move, function () {
         var touch = useTouch ? event.changedTouches[0] : event;
 
         if (TouchInfo.touched) {
@@ -308,7 +294,7 @@ function initTouchEvent(dom) {
         event.preventDefault();
     }, true);
 
-    dom.addEventListener(end, function() {
+    dom.addEventListener(end, function () {
         TouchInfo.touched = false;
         game.scene.afterDraw();
         event.preventDefault();
@@ -349,6 +335,43 @@ function drawLine(context, p1, p2, color, tx, ty) {
     context.closePath();
 }
 
+function drawVector(context, vector, color, tx, ty) {
+    tx = tx || 0;
+    ty = ty || 0;
+    if (color) {
+        context.strokeStyle = color;
+    }
+    context.beginPath();
+    context.moveTo(vector[0] + tx, vector[1] + ty);
+    for (var j = 1; j < vector.length; j += 2) {
+        var x = vector[j];
+        var y = vector[j + 1];
+        context.lineTo(x + tx, y + ty);
+    }
+    // context.lineTo(first[0], first[1]);
+    context.stroke()
+    context.closePath();
+}
+
+function computeVectorAABB(vector) {
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+    for (let i = 0, len = vector.length; i < len; i += 2) {
+        minX = Math.min(minX, vector[i])
+        maxX = Math.max(maxX, vector[i])
+        minY = Math.min(minY, vector[i + 1])
+        maxY = Math.max(maxY, vector[i + 1])
+    }
+    return [
+        minX,
+        minY,
+        maxX - minX,
+        maxY - minY
+    ]
+}
+
 function $id(id) {
     return document.getElementById(id);
 }
@@ -362,53 +385,45 @@ function $name(name) {
 
 var step = 0;
 
-function resample() {
-    if (polyline) {
+function doResample() {
+    if (step === 0 && CurrentGesture) {
         step++;
-        polyline.origPoints = polyline.points;
-        polyline.points = RD.Utils.resample(polyline.origPoints, polyline.normalPointCount);
-        polyline.pointCount = polyline.points.length;
-        Points = polyline.points;
+        CurrentGesture.resample()
+        Points = CurrentGesture.points;
     }
 }
 
-function centroid() {
-    if (polyline) {
+function doCentroid() {
+    if (step === 1 && CurrentGesture) {
         step++;
-
-        polyline.firstPoint = polyline.points[0];
-        polyline.aabb = RD.Utils.getAABB(polyline.points);
-        polyline.centroid = polyline.getCentroid();
-        Centroid = polyline.centroid;
+        Centroid = CurrentGesture.centroid;
     }
 }
 
-function translateTo() {
-    if (polyline) {
+function doTranslate() {
+    if (step === 2 && CurrentGesture) {
         step++;
-
-        polyline.translateTo(polyline.originX, polyline.originY);
-        Centroid = [polyline.originX, polyline.originY];
+        Centroid = [0, 0]
+        CurrentGesture.translate()
+        Points = CurrentGesture.points;
     }
 }
 
-function scale() {
-    if (polyline) {
+function doRotate() {
+    if (step === 3 && CurrentGesture) {
         step++;
-        polyline.scaleTo(polyline.normalSize);
+        CurrentGesture.rotate()
+        Points = CurrentGesture.points;
     }
 }
 
-function rotate() {
-    if (polyline) {
+function doScale() {
+    if (step === 4 && CurrentGesture) {
         step++;
-        polyline.angle = polyline.indicativeAngle();
-        polyline.rotateBy(-polyline.angle);
-        polyline.vector = polyline.vectorize();
+        CurrentGesture.scale()
+        Points = CurrentGesture.points;
     }
 }
-
-
 
 
 //

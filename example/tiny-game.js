@@ -177,9 +177,9 @@ Game.prototype = {
     init: function() {
 
         var canvas = this.canvas = document.getElementById(this.canvas) || this.canvas;
-        canvas.retinaResolutionEnabled = true;
-        canvas.width = Config.width;
-        canvas.height = Config.height;
+        canvas.width = Config.width / window.devicePixelRatio;
+        canvas.height = Config.height / window.devicePixelRatio;
+        canvas.retinaResolutionEnabled = false;
         if (canvas.style && "ejecta" in window) {
             canvas.style.width = window.innerWidth + "px";
             canvas.style.height = window.innerHeight + "px";

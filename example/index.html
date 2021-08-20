@@ -51,12 +51,14 @@
     }
     </style>
 
-    <script src="../../src/Utils.js"></script>
-    <script src="../../src/Polyline.js"></script>
-    <script src="../../src/DollarOne.js"></script>
-    <script src="../../src/DefaultOne.js"></script>
+    <script src="./gesture-tool.js"></script>
+<!--
+    <script src="../src/Utils.js"></script>
+    <script src="../src/Polyline.js"></script>
+    <script src="../src/DollarOne.js"></script>
+    <script src="../src/DefaultOne.js"></script> -->
 
-    <script src="../tiny-game.js"></script>
+    <script src="tiny-game.js"></script>
     <script src="main.js"></script>
 
     <script type="text/javascript">
@@ -71,20 +73,19 @@
     <canvas id="canvas"></canvas>
 
     <div id="toolbar">
-        <button type="button" onclick="window.location.reload();">Reload</button>
         <hr>
-        <!-- <button type="button" onclick="saveGesture();">save</button> -->
+        <button type="button" onclick="doResample();">resample</button>
+        <button type="button" onclick="doCentroid();">centroid</button>
+        <button type="button" onclick="doTranslate();">translate</button>
+        <button type="button" onclick="doRotate();">rotate</button>
+        <button type="button" onclick="doScale();">scale</button>
+        <hr>
         <button type="button" onclick="addGesture();">add <span id="gcount"></span></button>
-        <button type="button" onclick="removeGesture();">remove</button>
+        <button type="button" onclick="clearAllGestures();">clear</button>
         <hr>
         <button type="button" onclick="testGesture();">test</button>
+        <button type="button" onclick="window.location.reload();">Reload</button>
         <hr>
-        <button type="button" onclick="resample();">resample</button>
-        <button type="button" onclick="centroid();">centroid</button>
-        <button type="button" onclick="translateTo();">translate</button>
-        <button type="button" onclick="scale();">scale</button>
-        <button type="button" onclick="rotate();">rotate</button>
-        <div>v1</div>
     </div>
 
 </body>

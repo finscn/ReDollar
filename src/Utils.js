@@ -48,11 +48,17 @@
                 sum1 += v1 * v1;
                 sum2 += v2 * v2;
             }
-            return dot / Math.sqrt(sum1 * sum2);
+            const a = Math.acos(dot / Math.sqrt(sum1 * sum2))
+            console.warn("cosSimilarity")
+            console.log(a)
+            console.log(1-a)
+            console.log(1-2*a)
+            console.log(1-a/Math.PI)
+            console.log(1-2*a/Math.PI)
+            return a;
         },
 
         cosDistance: function(vector1, vector2) {
-            // return 1-Utils.cosSimilarity(vector1,vector2);
             var a = 0;
             var b = 0;
             for (var i = 0; i < vector1.length; i += 2) {
@@ -61,6 +67,9 @@
             }
             var angle = Math.atan(b / a);
             var d = Math.acos(a * Math.cos(angle) + b * Math.sin(angle));
+
+            console.warn(d);
+
             return d;
         },
 
