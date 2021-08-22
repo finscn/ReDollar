@@ -63,94 +63,41 @@ class GestureStroke {
         // rotateOBB = false // rotateOBB or rotateIndicativeAngle
         this.orientationCount = 1;
         this.ratioSensitive = false;
-        this.scaleSize = 200;
+        this.scaledSize = 200;
         // useAngleInvariance
         // useBoundedRotationInvariance
         this.id = null;
     }
     init(inputPoints) {
-        this.length = this.computeLength(inputPoints);
-        this.centroid = this.computeCentroid(inputPoints);
         this.inputPoints = inputPoints;
     }
     transform() {
+        this.scale();
         this.resample();
         this.translate();
         this.rotate();
-        this.scale();
-    }
-    translate() {
-        // 移到原点
-        GestureUtils_1.default.translate(this.points, -this.centroid[0], -this.centroid[1]);
-    }
-    rotate() {
-        // 旋转
-        this.angle = this.computeAngle();
-        GestureUtils_1.default.rotate(this.points, -this.angle);
     }
     scale() {
-        if (!this.ratioSensitive) {
-            // 计算AABB/OBB
-            this.aabb = GestureUtils_1.default.computeAABB(this.points);
-            const width = this.aabb[2];
-            const height = this.aabb[3];
-            // 缩放AABB/OBB
-            const scaleX = this.scaleSize / width;
-            const scaleY = this.scaleSize / height;
-            GestureUtils_1.default.scale(this.points, scaleX, scaleY);
+        if (this.ratioSensitive) {
+            return;
         }
-    }
-    computeLength(inputPoints) {
-        let d = 0;
-        let p0 = inputPoints[0];
-        let p1;
-        const count = inputPoints.length;
-        for (let i = 1; i < count; i++) {
-            p1 = inputPoints[i];
-            const dx = p1[0] - p0[0];
-            const dy = p1[1] - p0[1];
-            d += Math.sqrt(dx * dx + dy * dy);
-            p0 = p1;
-        }
-        return d;
-    }
-    computeCentroid(inputPoints) {
-        let x = 0;
-        let y = 0;
-        const count = inputPoints.length;
-        for (let i = 0; i < count; i++) {
-            x += inputPoints[i][0];
-            y += inputPoints[i][1];
-        }
-        x /= count;
-        y /= count;
-        return [x, y];
-    }
-    computeAngle(centroid) {
-        centroid = centroid || [0, 0];
-        const first = this.points[0];
-        let angle = Math.atan2(first[1] - centroid[0], first[0] - centroid[1]);
-        if (this.orientationCount > 1) {
-            const TWO_PI = Math.PI * 2;
-            if (angle < 0) {
-                angle = TWO_PI + angle;
-            }
-            const sector = TWO_PI / this.orientationCount;
-            console.log(sector * 180 / Math.PI, angle * 180 / Math.PI);
-            const baseOrientation = Math.round(angle / sector) * sector;
-            // const baseOrientation = r * Math.floor((angle + r / 2) / r)
-            angle = angle - baseOrientation;
-            console.log(baseOrientation * 180 / Math.PI, angle * 180 / Math.PI);
-        }
-        return angle;
+        const inputPoints = this.inputPoints;
+        // 计算AABB/OBB
+        this.aabb = GestureUtils_1.default.computeAABB(inputPoints);
+        const width = this.aabb[2];
+        const height = this.aabb[3];
+        // 缩放AABB/OBB
+        const scaleX = this.scaledSize / width;
+        const scaleY = this.scaledSize / height;
+        GestureUtils_1.default.scale(inputPoints, scaleX, scaleY);
     }
     resample() {
         const inputPoints = this.inputPoints;
         const sampleCount = this.pointCount;
-        const points = this.points = this.points || [];
-        points.length = 0;
+        const outputPoints = this.points = this.points || [];
+        outputPoints.length = 0;
+        const length = this.computeLength(inputPoints);
         const count = inputPoints.length;
-        const length = this.length;
         const increment = length / (sampleCount - 1);
         let distanceSoFar = 0;
         let lastX = inputPoints[0][0];
@@ -158,7 +105,7 @@ class GestureStroke {
         let currentX = -Infinity;
         let currentY = -Infinity;
         let index = 0;
-        points[index] = [lastX, lastY];
+        outputPoints[index] = [lastX, lastY];
         let i = 0;
         while (i < count) {
             if (currentX === -Infinity) {
@@ -179,7 +126,7 @@ class GestureStroke {
                 lastX = nx;
                 lastY = ny;
                 distanceSoFar = 0;
-                points[index] = [nx, ny];
+                outputPoints[index] = [nx, ny];
                 index++;
             }
             else {
@@ -191,8 +138,53 @@ class GestureStroke {
             }
         }
         for (i = index; i < sampleCount; i++) {
-            points[i] = [lastX, lastY];
+            outputPoints[i] = [lastX, lastY];
         }
+    }
+    translate() {
+        // 移到原点
+        this.centroid = this.computeCentroid();
+        GestureUtils_1.default.translate(this.points, -this.centroid[0], -this.centroid[1]);
+    }
+    rotate() {
+        // 旋转
+        this.angle = this.computeAngle();
+        GestureUtils_1.default.rotate(this.points, -this.angle);
+    }
+    computeLength(inputPoints) {
+        let d = 0;
+        let p0 = inputPoints[0];
+        let p1;
+        const count = inputPoints.length;
+        for (let i = 1; i < count; i++) {
+            p1 = inputPoints[i];
+            const dx = p1[0] - p0[0];
+            const dy = p1[1] - p0[1];
+            d += Math.sqrt(dx * dx + dy * dy);
+            p0 = p1;
+        }
+        return d;
+    }
+    computeCentroid() {
+        return GestureUtils_1.default.computeCentroid(this.points);
+    }
+    computeAngle(centroid) {
+        centroid = centroid || [0, 0];
+        const first = this.points[0];
+        let angle = Math.atan2(first[1] - centroid[0], first[0] - centroid[1]);
+        if (this.orientationCount > 1) {
+            const TWO_PI = Math.PI * 2;
+            if (angle < 0) {
+                angle = TWO_PI + angle;
+            }
+            const sector = TWO_PI / this.orientationCount;
+            console.log(sector * 180 / Math.PI, angle * 180 / Math.PI);
+            const baseOrientation = Math.round(angle / sector) * sector;
+            // const baseOrientation = r * Math.floor((angle + r / 2) / r)
+            angle = angle - baseOrientation;
+            console.log(baseOrientation * 180 / Math.PI, angle * 180 / Math.PI);
+        }
+        return angle;
     }
     vectorize() {
         if (!this.points) {
@@ -255,9 +247,6 @@ class GestureUtils {
         return points;
     }
     static scale(points, sx, sy) {
-        if (sx === 1 && sy === 1) {
-            return points;
-        }
         const count = points.length;
         for (let i = 0; i < count; i++) {
             const p = points[i];
@@ -384,6 +373,18 @@ class GestureUtils {
             maxY - minY
         ];
     }
+    static computeCentroid(points) {
+        let x = 0;
+        let y = 0;
+        const count = points.length;
+        for (let i = 0; i < count; i++) {
+            x += points[i][0];
+            y += points[i][1];
+        }
+        x /= count;
+        y /= count;
+        return [x, y];
+    }
     static computeAABB(points) {
         let minX = Infinity;
         let maxX = -Infinity;
@@ -452,7 +453,7 @@ class GestureTool {
         this.pointCount = 16;
         this.orientationCount = 8;
         this.ratioSensitive = false;
-        this.scaleSize = 200;
+        this.scaledSize = 200;
         this.gesturePool = GesturePool_1.default.getInstance();
     }
     createGesture(points) {
@@ -460,7 +461,7 @@ class GestureTool {
         stroke.pointCount = this.pointCount;
         stroke.orientationCount = this.orientationCount;
         stroke.ratioSensitive = this.ratioSensitive;
-        stroke.scaleSize = this.scaleSize;
+        stroke.scaledSize = this.scaledSize;
         stroke.init(points);
         return stroke;
     }
@@ -509,7 +510,7 @@ class GestureTool {
                     d = GestureUtils_1.default.minimumCosineDistance(vector, gesture);
                     break;
             }
-            console.log(d);
+            console.log(name, d);
             if (d < minDis) {
                 minDis = d;
                 match = name;
@@ -525,5 +526,6 @@ window['GestureStore'] = GesturePool_1.default;
 window['GestureUtils'] = GestureUtils_1.default;
 window['Polyline'] = GestureStroke_1.default;
 window['GestureTool'] = GestureTool;
+window['Similarity'] = GestureUtils_1.Similarity;
 
 },{"./GesturePool":1,"./GestureStroke":2,"./GestureUtils":3}]},{},[4]);

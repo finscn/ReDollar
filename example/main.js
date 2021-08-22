@@ -6,7 +6,7 @@ var originalPoint = [0, 0]
 
 var gestureTool = new GestureTool()
 
-gestureTool.threshold = 0.3
+gestureTool.threshold = 0.3 * 100
 
 gestureTool.pointCount = 32
 gestureTool.orientationCount = 1
@@ -245,15 +245,32 @@ function clearAllGestures() {
 }
 
 
-function testGesture() {
+function testGesture(transform) {
     if (!CurrentGesture) {
         return
     }
-    var t = Date.now();
+    if (transform) {
+        CurrentGesture.transform()
+    }
     CurrentGesture.vectorize()
-    MatchGesture = gestureTool.recognize(CurrentGesture.vector);
-    recognizeTime = Date.now() - t;
-    console.log(MatchGesture, recognizeTime)
+    var t, result
+
+    var list = [
+        Similarity.Euclidean,
+        Similarity.Cos,
+        Similarity.OptimalCos
+    ]
+
+    list.forEach(function (sim) {
+        console.log('** similarity:', sim)
+        t = Date.now();
+        gestureTool.similarity = sim
+        result = gestureTool.recognize(CurrentGesture.vector);
+        recognizeTime = Date.now() - t;
+        console.log(result, recognizeTime)
+    })
+
+    MatchGesture = result
     if (!MatchGesture) {
         MatchGesture = false;
     }
@@ -385,18 +402,40 @@ function $name(name) {
 
 var step = 0;
 
-function doResample() {
+
+function doScale() {
     if (step === 0 && CurrentGesture) {
         step++;
-        CurrentGesture.resample()
-        Points = CurrentGesture.points;
+
+        var c0 = GestureUtils.computeCentroid(CurrentGesture.inputPoints)
+        CurrentGesture.scale()
+        var c1 = GestureUtils.computeCentroid(CurrentGesture.inputPoints)
+        var dx = c1[0] - c0[0]
+        var dy = c1[1] - c0[1]
+
+        Points = []
+        CurrentGesture.inputPoints.forEach(function (p) {
+            Points.push([p[0] - dx, p[1] - dy])
+        })
     }
 }
 
-function doCentroid() {
+function doResample() {
     if (step === 1 && CurrentGesture) {
         step++;
-        Centroid = CurrentGesture.centroid;
+
+        var c0 = GestureUtils.computeCentroid(Points)
+
+        CurrentGesture.resample()
+
+        var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
+        var dx = c1[0] - c0[0]
+        var dy = c1[1] - c0[1]
+
+        Points = []
+        CurrentGesture.points.forEach(function (p) {
+            Points.push([p[0] - dx, p[1] - dy])
+        })
     }
 }
 
@@ -413,14 +452,6 @@ function doRotate() {
     if (step === 3 && CurrentGesture) {
         step++;
         CurrentGesture.rotate()
-        Points = CurrentGesture.points;
-    }
-}
-
-function doScale() {
-    if (step === 4 && CurrentGesture) {
-        step++;
-        CurrentGesture.scale()
         Points = CurrentGesture.points;
     }
 }

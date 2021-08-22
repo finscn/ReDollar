@@ -33,9 +33,6 @@ class GestureUtils {
         return points;
     }
     static scale(points, sx, sy) {
-        if (sx === 1 && sy === 1) {
-            return points;
-        }
         const count = points.length;
         for (let i = 0; i < count; i++) {
             const p = points[i];
@@ -161,6 +158,18 @@ class GestureUtils {
             maxX - minX,
             maxY - minY
         ];
+    }
+    static computeCentroid(points) {
+        let x = 0;
+        let y = 0;
+        const count = points.length;
+        for (let i = 0; i < count; i++) {
+            x += points[i][0];
+            y += points[i][1];
+        }
+        x /= count;
+        y /= count;
+        return [x, y];
     }
     static computeAABB(points) {
         let minX = Infinity;

@@ -1,6 +1,6 @@
 import { Point } from "./GestureStroke"
 
-export enum Similarity  {
+export enum Similarity {
     Euclidean,
     Cos,
     OptimalCos
@@ -37,9 +37,6 @@ export default class GestureUtils {
     }
 
     static scale(points: Point[], sx: number, sy: number): Point[] {
-        if (sx === 1 && sy === 1) {
-            return points
-        }
         const count = points.length
         for (let i = 0; i < count; i++) {
             const p = points[i]
@@ -173,6 +170,19 @@ export default class GestureUtils {
             maxX - minX,
             maxY - minY
         ]
+    }
+
+    static computeCentroid(points: Point[]): Point {
+        let x = 0
+        let y = 0
+        const count = points.length
+        for (let i = 0; i < count; i++) {
+            x += points[i][0]
+            y += points[i][1]
+        }
+        x /= count
+        y /= count
+        return [x, y]
     }
 
     static computeAABB(points: Point[]): number[] {

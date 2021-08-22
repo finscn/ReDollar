@@ -13,7 +13,7 @@ class GestureTool {
     pointCount = 16
     orientationCount = 8
     ratioSensitive = false
-    scaleSize = 200
+    scaledSize = 200
 
     gesturePool: GesturePool
 
@@ -26,7 +26,7 @@ class GestureTool {
         stroke.pointCount = this.pointCount
         stroke.orientationCount = this.orientationCount
         stroke.ratioSensitive = this.ratioSensitive
-        stroke.scaleSize = this.scaleSize
+        stroke.scaledSize = this.scaledSize
 
         stroke.init(points)
 
@@ -87,7 +87,7 @@ class GestureTool {
                     break
             }
 
-            console.log(d)
+            console.log(name, d)
             if (d < minDis) {
                 minDis = d
                 match = name
@@ -105,4 +105,5 @@ window['GestureStore'] = GesturePool
 window['GestureUtils'] = GestureUtils
 window['Polyline'] = GestureStroke
 window['GestureTool'] = GestureTool
+window['Similarity'] = Similarity
 

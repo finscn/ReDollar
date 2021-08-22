@@ -11,7 +11,7 @@ class GestureTool {
         this.pointCount = 16;
         this.orientationCount = 8;
         this.ratioSensitive = false;
-        this.scaleSize = 200;
+        this.scaledSize = 200;
         this.gesturePool = GesturePool_1.default.getInstance();
     }
     createGesture(points) {
@@ -19,7 +19,7 @@ class GestureTool {
         stroke.pointCount = this.pointCount;
         stroke.orientationCount = this.orientationCount;
         stroke.ratioSensitive = this.ratioSensitive;
-        stroke.scaleSize = this.scaleSize;
+        stroke.scaledSize = this.scaledSize;
         stroke.init(points);
         return stroke;
     }
@@ -68,7 +68,7 @@ class GestureTool {
                     d = GestureUtils_1.default.minimumCosineDistance(vector, gesture);
                     break;
             }
-            console.log(d);
+            console.log(name, d);
             if (d < minDis) {
                 minDis = d;
                 match = name;
@@ -84,3 +84,4 @@ window['GestureStore'] = GesturePool_1.default;
 window['GestureUtils'] = GestureUtils_1.default;
 window['Polyline'] = GestureStroke_1.default;
 window['GestureTool'] = GestureTool;
+window['Similarity'] = GestureUtils_1.Similarity;

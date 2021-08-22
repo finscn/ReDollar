@@ -74,16 +74,16 @@
 
     <div id="toolbar">
         <hr>
+        <button type="button" onclick="doScale();">scale</button>
         <button type="button" onclick="doResample();">resample</button>
-        <button type="button" onclick="doCentroid();">centroid</button>
         <button type="button" onclick="doTranslate();">translate</button>
         <button type="button" onclick="doRotate();">rotate</button>
-        <button type="button" onclick="doScale();">scale</button>
         <hr>
         <button type="button" onclick="addGesture();">add <span id="gcount"></span></button>
         <button type="button" onclick="clearAllGestures();">clear</button>
         <hr>
         <button type="button" onclick="testGesture();">test</button>
+        <button type="button" onclick="testGesture(true);">full-test</button>
         <button type="button" onclick="window.location.reload();">Reload</button>
         <hr>
     </div>
