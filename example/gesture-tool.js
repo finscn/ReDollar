@@ -70,6 +70,10 @@ class GestureStroke {
     }
     init(inputPoints) {
         this.inputPoints = inputPoints;
+        this.scaled = false;
+        this.resampled = false;
+        this.translated = false;
+        this.rotated = false;
     }
     transform() {
         this.scale();
@@ -90,6 +94,7 @@ class GestureStroke {
         const scaleX = this.scaledSize / width;
         const scaleY = this.scaledSize / height;
         GestureUtils_1.default.scale(inputPoints, scaleX, scaleY);
+        this.scaled = true;
     }
     resample() {
         const inputPoints = this.inputPoints;
@@ -99,23 +104,13 @@ class GestureStroke {
         const length = this.computeLength(inputPoints);
         const count = inputPoints.length;
         const increment = length / (sampleCount - 1);
-        let distanceSoFar = 0;
         let lastX = inputPoints[0][0];
         let lastY = inputPoints[0][1];
-        let currentX = -Infinity;
-        let currentY = -Infinity;
-        let index = 0;
-        outputPoints[index] = [lastX, lastY];
-        let i = 0;
-        while (i < count) {
-            if (currentX === -Infinity) {
-                i++;
-                if (i >= count) {
-                    break;
-                }
-                currentX = inputPoints[i][0];
-                currentY = inputPoints[i][1];
-            }
+        let distanceSoFar = 0;
+        outputPoints.push([lastX, lastY]);
+        for (let i = 1; i < count;) {
+            const currentX = inputPoints[i][0];
+            const currentY = inputPoints[i][1];
             const deltaX = currentX - lastX;
             const deltaY = currentY - lastY;
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -126,30 +121,31 @@ class GestureStroke {
                 lastX = nx;
                 lastY = ny;
                 distanceSoFar = 0;
-                outputPoints[index] = [nx, ny];
-                index++;
+                outputPoints.push([nx, ny]);
             }
             else {
                 lastX = currentX;
                 lastY = currentY;
-                currentX = -Infinity;
-                currentY = -Infinity;
                 distanceSoFar += distance;
+                i++;
             }
         }
-        for (i = index; i < sampleCount; i++) {
-            outputPoints[i] = [lastX, lastY];
+        for (let i = outputPoints.length; i < sampleCount; i++) {
+            outputPoints.push([lastX, lastY]);
         }
+        this.resampled = true;
     }
     translate() {
         // 移到原点
         this.centroid = this.computeCentroid();
         GestureUtils_1.default.translate(this.points, -this.centroid[0], -this.centroid[1]);
+        this.translated = true;
     }
     rotate() {
         // 旋转
         this.angle = this.computeAngle();
         GestureUtils_1.default.rotate(this.points, -this.angle);
+        this.rotated = true;
     }
     computeLength(inputPoints) {
         let d = 0;

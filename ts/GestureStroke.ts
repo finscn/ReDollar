@@ -79,31 +79,20 @@ export default class GestureStroke {
 
         const length = this.computeLength(inputPoints)
         const count = inputPoints.length
-
         const increment = length / (sampleCount - 1)
 
-        let distanceSoFar = 0
         let lastX = inputPoints[0][0]
         let lastY = inputPoints[0][1]
+        let distanceSoFar = 0
 
-        let currentX: number = -Infinity
-        let currentY: number = -Infinity
+        outputPoints.push([lastX, lastY])
 
-        let index = 0
-        outputPoints[index] = [lastX, lastY]
-
-        let i = 0
-        while (i < count) {
-            if (currentX === -Infinity) {
-                i++
-                if (i >= count) {
-                    break
-                }
-                currentX = inputPoints[i][0]
-                currentY = inputPoints[i][1]
-            }
+        for (let i = 1; i < count;) {
+            const currentX = inputPoints[i][0]
+            const currentY = inputPoints[i][1]
             const deltaX = currentX - lastX
             const deltaY = currentY - lastY
+
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
             if (distanceSoFar + distance >= increment) {
                 const ratio = (increment - distanceSoFar) / distance
@@ -112,19 +101,17 @@ export default class GestureStroke {
                 lastX = nx
                 lastY = ny
                 distanceSoFar = 0
-                outputPoints[index] = [nx, ny]
-                index++
+                outputPoints.push([nx, ny])
             } else {
                 lastX = currentX
                 lastY = currentY
-                currentX = -Infinity
-                currentY = -Infinity
                 distanceSoFar += distance
+                i++
             }
         }
 
-        for (i = index; i < sampleCount; i++) {
-            outputPoints[i] = [lastX, lastY]
+        for (let i = outputPoints.length; i < sampleCount; i++) {
+            outputPoints.push([lastX, lastY])
         }
 
         this.resampled = true
