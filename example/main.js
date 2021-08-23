@@ -241,8 +241,21 @@ function loadGestures() {
 var gid = 0;
 
 function addGesture() {
-    if (!CurrentGesture || !CurrentGesture.vector) {
+    if (!CurrentGesture) {
         return;
+    }
+
+    if (!CurrentGesture.scaled) {
+        CurrentGesture.scale()
+    }
+    if (!CurrentGesture.resampled) {
+        CurrentGesture.resample()
+    }
+    if (!CurrentGesture.translated) {
+        CurrentGesture.translate()
+    }
+    if (!CurrentGesture.rotated) {
+        CurrentGesture.rotate()
     }
 
     var name = null; // prompt("手势名称", "");
@@ -259,6 +272,8 @@ function addGesture() {
     var names = gestureTool.getAllGestureNames();
     var count = names.length
     $id("gcount").innerHTML = count;
+
+    doReload()
 }
 
 

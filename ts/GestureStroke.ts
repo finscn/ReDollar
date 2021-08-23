@@ -31,8 +31,17 @@ export default class GestureStroke {
     vector: number[]
     aabb: number[]
 
+    scaled: boolean
+    resampled: boolean
+    translated: boolean
+    rotated: boolean
+
     init(inputPoints: Point[]) {
         this.inputPoints = inputPoints
+        this.scaled = false
+        this.resampled = false
+        this.translated = false
+        this.rotated = false
     }
 
     transform() {
@@ -57,6 +66,8 @@ export default class GestureStroke {
         const scaleY = this.scaledSize / height
 
         GestureUtils.scale(inputPoints, scaleX, scaleY)
+
+        this.scaled = true
     }
 
     resample() {
@@ -115,18 +126,24 @@ export default class GestureStroke {
         for (i = index; i < sampleCount; i++) {
             outputPoints[i] = [lastX, lastY]
         }
+
+        this.resampled = true
     }
 
     translate() {
         // 移到原点
         this.centroid = this.computeCentroid()
         GestureUtils.translate(this.points, -this.centroid[0], -this.centroid[1])
+
+        this.translated = true
     }
 
     rotate() {
         // 旋转
         this.angle = this.computeAngle()
         GestureUtils.rotate(this.points, -this.angle)
+
+        this.rotated = true
     }
 
     computeLength(inputPoints: Point[]): number {
