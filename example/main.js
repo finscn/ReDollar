@@ -241,7 +241,7 @@ function loadGestures() {
 var gid = 0;
 
 function addGesture() {
-    if (!CurrentGesture) {
+    if (!CurrentGesture || !CurrentGesture.vector) {
         return;
     }
 
