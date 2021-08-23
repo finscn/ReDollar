@@ -14,6 +14,21 @@ gestureTool.ratioSensitive = false
 gestureTool.scaleSize = 200
 
 
+function doSetRatio(target) {
+    console.log(target.checked)
+    gestureTool.ratioSensitive = !!target.checked
+    window.localStorage.setItem('ratioSensitive', gestureTool.ratioSensitive)
+
+    $id('doScale').disabled = gestureTool.ratioSensitive
+}
+
+function doSetOrientation(target) {
+    console.log(target.value)
+    gestureTool.orientationCount = Number(target.value)
+    window.localStorage.setItem('orientationCount', gestureTool.orientationCount)
+}
+
+
 var Points = [];
 var RecordPoints = {};
 
@@ -75,8 +90,10 @@ var game = new Game({
                 var l = 400;
                 drawLine(context, [-l, 0], [l, 0], "#bbbbbb", tx, ty);
                 drawLine(context, [0, -l], [0, l], "#bbbbbb", tx, ty);
-                drawLine(context, [-l, -l], [l, l], "#bbbbbb", tx, ty);
-                drawLine(context, [l, -l], [-l, l], "#bbbbbb", tx, ty);
+                if (gestureTool.orientationCount > 4) {
+                    drawLine(context, [-l, -l], [l, l], "#bbbbbb", tx, ty);
+                    drawLine(context, [l, -l], [-l, l], "#bbbbbb", tx, ty);
+                }
                 context.fillStyle = "#330000";
                 context.fillRect(tx - 3, ty - 3, 6, 6);
 
@@ -151,6 +168,8 @@ var game = new Game({
 function init() {
     loadGestures();
     game.init();
+    $id('toolbar').style.left = ($id('canvas').clientLeft + $id('canvas').clientWidth + 4) + 'px'
+    $id('toolbar').style.top = 4 + 'px'
 }
 
 function reset() {
@@ -191,6 +210,16 @@ function createGestureImg(points, size) {
 var GestureImgs = {};
 
 function loadGestures() {
+    const orientationCount = window.localStorage.getItem('orientationCount')
+    gestureTool.orientationCount = Number(orientationCount)
+    $id('toggleOrientation').value = gestureTool.orientationCount
+
+    const ratioSensitive = window.localStorage.getItem('ratioSensitive')
+    gestureTool.ratioSensitive = ratioSensitive === 'true' ? true : false
+    $id('toggleRatio').checked = gestureTool.ratioSensitive
+    $id('doScale').disabled = gestureTool.ratioSensitive
+
+
 
     const rec = window.localStorage.getItem('RecordPoints')
     if (rec) {
@@ -242,8 +271,13 @@ function clearAllGestures() {
 
     Points = [];
     $id("gcount").innerHTML = 0;
+
+    doReload()
 }
 
+function doReload() {
+    window.location.reload();
+}
 
 function testGesture(transform) {
     if (!CurrentGesture) {
@@ -251,6 +285,9 @@ function testGesture(transform) {
     }
     if (transform) {
         CurrentGesture.transform()
+        step = 4
+        Points = CurrentGesture.points
+        Centroid = [0, 0]
     }
     CurrentGesture.vectorize()
     var t, result
@@ -421,8 +458,8 @@ function doScale() {
 }
 
 function doResample() {
-    if (step === 1 && CurrentGesture) {
-        step++;
+    if (step <= 1 && CurrentGesture) {
+        step = 2;
 
         var c0 = GestureUtils.computeCentroid(Points)
 
