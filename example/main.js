@@ -456,17 +456,21 @@ var step = 0;
 
 
 function doScale() {
-    if (step === 0 && CurrentGesture) {
-        step++;
+    if (step <= 1 && CurrentGesture) {
+        step = step === 0 ? 1 : 2
 
-        var c0 = GestureUtils.computeCentroid(CurrentGesture.inputPoints)
-        CurrentGesture.scale()
-        var c1 = GestureUtils.computeCentroid(CurrentGesture.inputPoints)
+        const afterResample = step === 2
+        const points = afterResample ? CurrentGesture.points : CurrentGesture.inputPoints
+
+        var c0 = GestureUtils.computeCentroid(points)
+        debugger
+        CurrentGesture.scale(afterResample)
+        var c1 = GestureUtils.computeCentroid(points)
         var dx = c1[0] - c0[0]
         var dy = c1[1] - c0[1]
 
         Points = []
-        CurrentGesture.inputPoints.forEach(function (p) {
+        points.forEach(function (p) {
             Points.push([p[0] - dx, p[1] - dy])
         })
     }
@@ -474,7 +478,7 @@ function doScale() {
 
 function doResample() {
     if (step <= 1 && CurrentGesture) {
-        step = 2;
+        step = step === 0 ? 1 : 2
 
         var c0 = GestureUtils.computeCentroid(Points)
 

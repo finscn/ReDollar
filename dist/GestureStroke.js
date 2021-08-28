@@ -29,19 +29,19 @@ class GestureStroke {
         this.translate();
         this.rotate();
     }
-    scale() {
+    scale(afterResample = false) {
         if (this.ratioSensitive) {
             return;
         }
-        const inputPoints = this.inputPoints;
+        const points = afterResample ? this.points : this.inputPoints;
         // 计算AABB/OBB
-        this.aabb = GestureUtils_1.default.computeAABB(inputPoints);
+        this.aabb = GestureUtils_1.default.computeAABB(points);
         const width = this.aabb[2];
         const height = this.aabb[3];
         // 缩放AABB/OBB
         const scaleX = this.scaledSize / width;
         const scaleY = this.scaledSize / height;
-        GestureUtils_1.default.scale(inputPoints, scaleX, scaleY);
+        GestureUtils_1.default.scale(points, scaleX, scaleY);
         this.scaled = true;
     }
     resample() {

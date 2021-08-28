@@ -51,13 +51,15 @@ export default class GestureStroke {
         this.rotate()
     }
 
-    scale() {
+    scale(afterResample = false) {
         if (this.ratioSensitive) {
             return
         }
-        const inputPoints = this.inputPoints
+
+        const points = afterResample ? this.points : this.inputPoints
+
         // 计算AABB/OBB
-        this.aabb = GestureUtils.computeAABB(inputPoints)
+        this.aabb = GestureUtils.computeAABB(points)
         const width = this.aabb[2]
         const height = this.aabb[3]
 
@@ -65,7 +67,7 @@ export default class GestureStroke {
         const scaleX = this.scaledSize / width
         const scaleY = this.scaledSize / height
 
-        GestureUtils.scale(inputPoints, scaleX, scaleY)
+        GestureUtils.scale(points, scaleX, scaleY)
 
         this.scaled = true
     }
