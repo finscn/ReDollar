@@ -174,6 +174,9 @@ function init() {
 
 function reset() {
     step = 0;
+    deltaX = 0;
+    deltaY = 0;
+
     Points = [];
     CurrentGesture = null;
     Centroid = null;
@@ -451,7 +454,8 @@ function $name(name) {
 
 
 var step = 0;
-
+var deltaX = 0;
+var deltaY = 0;
 
 function doScale() {
     if (step <= 1 && CurrentGesture) {
@@ -463,12 +467,12 @@ function doScale() {
         var c0 = GestureUtils.computeCentroid(points)
         CurrentGesture.scale(afterResample)
         var c1 = GestureUtils.computeCentroid(points)
-        var dx = c1[0] - c0[0]
-        var dy = c1[1] - c0[1]
+        deltaX = c1[0] - c0[0]
+        deltaY = c1[1] - c0[1]
 
         Points = []
         points.forEach(function (p) {
-            Points.push([p[0] - dx, p[1] - dy])
+            Points.push([p[0] - deltaX, p[1] - deltaY])
         })
     }
 }
@@ -477,13 +481,14 @@ function doResample() {
     if (step <= 1 && CurrentGesture) {
         step = step === 0 ? 1 : 2
 
-        var c0 = GestureUtils.computeCentroid(Points)
-
         CurrentGesture.resample()
 
-        var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
-        var dx = c1[0] - c0[0]
-        var dy = c1[1] - c0[1]
+        var dx = 0
+        var dy = 0
+        if (step === 2) {
+            dx = deltaX
+            dy = deltaY
+        }
 
         Points = []
         CurrentGesture.points.forEach(function (p) {
