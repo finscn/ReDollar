@@ -461,7 +461,6 @@ function doScale() {
         const points = afterResample ? CurrentGesture.points : CurrentGesture.inputPoints
 
         var c0 = GestureUtils.computeCentroid(points)
-        debugger
         CurrentGesture.scale(afterResample)
         var c1 = GestureUtils.computeCentroid(points)
         var dx = c1[0] - c0[0]
