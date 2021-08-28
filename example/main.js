@@ -2,6 +2,10 @@
 
 Config.width = 800;
 Config.height = 600;
+Config.bgColor = "#ffffff"
+Config.drawCoordinate = true;
+
+
 var originalPoint = [0, 0]
 
 var gestureTool = new GestureTool()
@@ -80,22 +84,29 @@ var game = new Game({
                 this.cooldown--;
             },
             render: function (context, timeStep, now) {
-                context.lineWidth = 1;
-                context.fillStyle = "#f3f3f3";
+
+                context.fillStyle = Config.bgColor;
                 context.fillRect(0, 0, this.width, this.height);
+
+                context.lineWidth = 3;
+                context.strokeStyle = "#999999";
+                context.strokeRect(0, 0, this.width, this.height);
+                context.lineWidth = 1;
 
                 var tx = originalPoint[0];
                 var ty = originalPoint[1];
 
-                var l = 400;
-                drawLine(context, [-l, 0], [l, 0], "#bbbbbb", tx, ty);
-                drawLine(context, [0, -l], [0, l], "#bbbbbb", tx, ty);
-                if (gestureTool.orientationCount > 4) {
-                    drawLine(context, [-l, -l], [l, l], "#bbbbbb", tx, ty);
-                    drawLine(context, [l, -l], [-l, l], "#bbbbbb", tx, ty);
+                if (Config.drawCoordinate) {
+                    var l = 400;
+                    drawLine(context, [-l, 0], [l, 0], "#bbbbbb", tx, ty);
+                    drawLine(context, [0, -l], [0, l], "#bbbbbb", tx, ty);
+                    if (gestureTool.orientationCount > 4) {
+                        drawLine(context, [-l, -l], [l, l], "#bbbbbb", tx, ty);
+                        drawLine(context, [l, -l], [-l, l], "#bbbbbb", tx, ty);
+                    }
+                    context.fillStyle = "#990000";
+                    context.fillRect(tx - 3, ty - 3, 6, 6);
                 }
-                context.fillStyle = "#330000";
-                context.fillRect(tx - 3, ty - 3, 6, 6);
 
 
                 var names = Object.keys(RecordPoints)
