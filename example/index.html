@@ -37,6 +37,18 @@
         top: 2px;
         /* right: 2px; */
     }
+    #toolbar input[type="text"] {
+        font-size: 18px;
+        line-height: 22px;
+        width: 50px;
+        padding: 5px 5px;
+        margin: 10px 5px;
+    }
+    #toolbar input[type="checkbox"] {
+        font-size: 18px;
+        line-height: 22px;
+        margin: 10px 5px;
+    }
     #toolbar button{
         display: block;
         font-size: 18px;
@@ -78,7 +90,8 @@
 
     <div id="toolbar">
         <hr>
-        <div><input id="toggleRatio" type="checkbox" onchange="doSetRatio(this);" checked>保持宽高比</div>
+        <div>容差:<input id="threshold" type="text" value="0.25" onchange="doSetThreshold(this)"></div>
+        <div>保持宽高比:<input id="toggleRatio" type="checkbox" onchange="doSetRatio(this);" checked></div>
         <div>方向性&nbsp;&nbsp;
         <select id="toggleOrientation" onchange="doSetOrientation(this);">
             <option value="1" selected>1</option>
@@ -93,7 +106,7 @@
         <button type="button" onclick="doRotate();">旋转</button>
         <hr>
         <button type="button" onclick="testGesture();">检测</button>
-        <button type="button" onclick="testGesture(true);">快速检测</button>
+        <button type="button" onclick="testGesture(true);">一步检测</button>
         <hr>
         <button type="button" onclick="addGesture();">添加 <span id="gcount"></span></button>
         <button type="button" onclick="clearAllGestures();">重置</button>

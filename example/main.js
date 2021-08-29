@@ -10,13 +10,19 @@ var originalPoint = [0, 0]
 
 var gestureTool = new GestureTool()
 
-gestureTool.threshold = 0.3 * 100
+gestureTool.threshold = 0.25
 
 gestureTool.pointCount = 32
 gestureTool.orientationCount = 1
 gestureTool.ratioSensitive = false
 gestureTool.scaleSize = 200
 
+
+function doSetThreshold(target) {
+    console.log(target.value)
+    gestureTool.threshold = Number(target.value)
+    window.localStorage.setItem('threshold', gestureTool.threshold)
+}
 
 function doSetRatio(target) {
     console.log(target.checked)
@@ -224,6 +230,10 @@ function createGestureImg(points, size) {
 var GestureImgs = {};
 
 function loadGestures() {
+    const threshold = window.localStorage.getItem('threshold')
+    gestureTool.threshold = Number(threshold) || 0.25
+    $id('threshold').value = gestureTool.threshold
+
     const orientationCount = window.localStorage.getItem('orientationCount')
     gestureTool.orientationCount = Number(orientationCount) || 1
     $id('toggleOrientation').value = gestureTool.orientationCount
@@ -334,7 +344,10 @@ function testGesture(transform) {
         console.log(result, recognizeTime)
     })
 
-    MatchGesture = result
+    if (result && result.success) {
+        MatchGesture = result.gesture
+    }
+
     if (!MatchGesture) {
         MatchGesture = false;
     }

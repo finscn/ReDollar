@@ -48,12 +48,12 @@ class GestureTool {
             this.gesturePool.cache = JSON.parse(str);
         }
     }
-    recognize(gesture, threshold = this.threshold, first = false) {
+    recognize(gesture, first = false) {
         if (!Array.isArray(gesture)) {
             gesture.vectorize();
             gesture = gesture.vector;
         }
-        let minDis = threshold;
+        let minDis = Infinity;
         let match = null;
         this.gesturePool.forEachGesture((name, vector, index) => {
             let d = Infinity;
@@ -72,12 +72,16 @@ class GestureTool {
             if (d < minDis) {
                 minDis = d;
                 match = name;
-                if (first) {
+                if (first && minDis <= this.threshold) {
                     return true;
                 }
             }
         }, true);
-        return match;
+        return {
+            success: minDis <= this.threshold,
+            gesture: match,
+            distance: minDis
+        };
     }
 }
 window['GestureStore'] = GesturePool_1.default;

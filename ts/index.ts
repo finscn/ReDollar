@@ -65,13 +65,13 @@ class GestureTool {
         }
     }
 
-    recognize(gesture: number[] | GestureStroke, threshold: number = this.threshold, first: boolean = false) {
+    recognize(gesture: number[] | GestureStroke, first = false): RecognizeResult {
         if (!Array.isArray(gesture)) {
             (gesture as GestureStroke).vectorize()
             gesture = (gesture as GestureStroke).vector
         }
 
-        let minDis = threshold
+        let minDis = Infinity
         let match = null
         this.gesturePool.forEachGesture((name: string, vector: number[], index: number) => {
             let d: number = Infinity
@@ -88,17 +88,28 @@ class GestureTool {
             }
 
             console.log(name, d)
+
             if (d < minDis) {
                 minDis = d
                 match = name
-                if (first) {
+                if (first && minDis <= this.threshold) {
                     return true
                 }
             }
         }, true)
 
-        return match
+        return {
+            success: minDis <= this.threshold,
+            gesture: match,
+            distance: minDis
+        }
     }
+}
+
+interface RecognizeResult {
+    success: boolean
+    gesture: string
+    distance: number
 }
 
 window['GestureStore'] = GesturePool
