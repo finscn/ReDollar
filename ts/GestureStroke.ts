@@ -188,8 +188,7 @@ export default class GestureStroke {
             const p = this.points[i]
             const x = p[0]
             const y = p[1]
-            vector.push(x)
-            vector.push(y)
+            vector.push(x, y)
             sum += x * x + y * y
         }
         const magnitude = Math.sqrt(sum)
