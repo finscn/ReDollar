@@ -19,13 +19,13 @@ gestureTool.scaleSize = 200
 
 
 function doSetThreshold(target) {
-    console.log(target.value)
+    console.log(target.id, target.value)
     gestureTool.threshold = Number(target.value)
     window.localStorage.setItem('threshold', gestureTool.threshold)
 }
 
 function doSetRatio(target) {
-    console.log(target.checked)
+    console.log(target.id, target.checked)
     gestureTool.ratioSensitive = !!target.checked
     window.localStorage.setItem('ratioSensitive', gestureTool.ratioSensitive)
 
@@ -33,9 +33,15 @@ function doSetRatio(target) {
 }
 
 function doSetOrientation(target) {
-    console.log(target.value)
+    console.log(target.id, target.value)
     gestureTool.orientationCount = Number(target.value) || 1
     window.localStorage.setItem('orientationCount', gestureTool.orientationCount)
+}
+
+function doSetSamplePointCount(target) {
+    console.log(target.id, target.value)
+    gestureTool.pointCount = Number(target.value) || 32
+    window.localStorage.setItem('pointCount', gestureTool.pointCount)
 }
 
 
@@ -237,6 +243,10 @@ function loadGestures() {
     const orientationCount = window.localStorage.getItem('orientationCount')
     gestureTool.orientationCount = Number(orientationCount) || 1
     $id('toggleOrientation').value = gestureTool.orientationCount
+
+    const pointCount = window.localStorage.getItem('pointCount')
+    gestureTool.pointCount = Number(pointCount) || 32
+    $id('pointCount').value = gestureTool.pointCount
 
     const ratioSensitive = window.localStorage.getItem('ratioSensitive')
     gestureTool.ratioSensitive = ratioSensitive === 'true' ? true : false
