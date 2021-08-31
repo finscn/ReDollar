@@ -76,7 +76,7 @@
     <script src="gesture-tool.js"></script>
     <script src="tiny-game.js"></script>
     <script src="base.js"></script>
-    <script src="main.js"></script>
+    <script src="dollar-main.js"></script>
 
     <script type="text/javascript">
 
@@ -96,24 +96,15 @@
         <select id="sampleCount" onchange="doSetSampleCount(this);">
             <option value="16">16</option>
             <option value="24">24</option>
-            <option value="32">32</option>
+            <option value="32" selected>32</option>
         </select></div>
         <hr>
-        <div>保持宽高比:<input id="toggleRatio" type="checkbox" onchange="doSetRatio(this);" checked></div>
-        <div>方向性&nbsp;&nbsp;
-        <select id="toggleOrientation" onchange="doSetOrientation(this);">
-            <option value="1">1</option>
-            <option value="4">4</option>
-            <option value="8">8</option>
-        </select></div>
-        <hr>
-        <button type="button" onclick="doTranslate();">移动</button>
+        <button type="button" onclick="doResample(false);">重新采样</button>
         <button type="button" onclick="doRotate();">旋转</button>
         <button id="doScale" type="button" onclick="doScale();">缩放</button>
-        <button type="button" onclick="doResample(true);">重新采样</button>
+        <button type="button" onclick="doTranslate();">移动</button>
         <hr>
         <button type="button" onclick="testGesture();">检测</button>
-        <button type="button" onclick="testGesture(true);">一步检测</button>
         <hr>
         <button type="button" onclick="addGesture();">添加 <span id="gcount"></span></button>
         <button type="button" onclick="clearAllGestures();">重置</button>

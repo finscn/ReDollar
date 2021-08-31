@@ -10,7 +10,7 @@ class GestureTool {
 
     threshold = 0.2
 
-    pointCount = 16
+    sampleCount = 16
     orientationCount = 8
     ratioSensitive = false
     scaledSize = 200
@@ -23,7 +23,7 @@ class GestureTool {
 
     createGesture(points: Point[]) {
         const stroke = new GestureStroke()
-        stroke.pointCount = this.pointCount
+        stroke.sampleCount = this.sampleCount
         stroke.orientationCount = this.orientationCount
         stroke.ratioSensitive = this.ratioSensitive
         stroke.scaledSize = this.scaledSize
@@ -112,9 +112,9 @@ interface RecognizeResult {
     distance: number
 }
 
-window['GestureStore'] = GesturePool
+window['GesturePool'] = GesturePool
 window['GestureUtils'] = GestureUtils
-window['Polyline'] = GestureStroke
+window['GestureStroke'] = GestureStroke
 window['GestureTool'] = GestureTool
 window['Similarity'] = Similarity
 

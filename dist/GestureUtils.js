@@ -10,6 +10,33 @@ var Similarity;
 class GestureUtils {
     constructor() {
     }
+    static rotateAround(points, angle, center) {
+        const count = points.length;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        for (let i = 0; i < count; i++) {
+            const p = points[i];
+            const x = (p[0] - center[0]) * cos - (p[1] - center[1]) * sin;
+            const y = (p[0] - center[0]) * sin + (p[1] - center[1]) * cos;
+            p[0] = x + center[0];
+            p[1] = y + center[1];
+        }
+    }
+    static translate(points, dx, dy, outputPoints) {
+        const count = points.length;
+        if (outputPoints) {
+            for (let i = 0; i < count; i++) {
+                const p = points[i];
+                outputPoints.push([p[0] + dx, p[1] + dy]);
+            }
+            return;
+        }
+        for (let i = 0; i < count; i++) {
+            const p = points[i];
+            p[0] += dx;
+            p[1] += dy;
+        }
+    }
     static rotate(points, angle) {
         const count = points.length;
         const cos = Math.cos(angle);
@@ -21,16 +48,6 @@ class GestureUtils {
             p[0] = x;
             p[1] = y;
         }
-        return points;
-    }
-    static translate(points, dx, dy) {
-        const count = points.length;
-        for (let i = 0; i < count; i++) {
-            const p = points[i];
-            p[0] += dx;
-            p[1] += dy;
-        }
-        return points;
     }
     static scale(points, sx, sy) {
         const count = points.length;
@@ -39,7 +56,57 @@ class GestureUtils {
             p[0] *= sx;
             p[1] *= sy;
         }
-        return points;
+    }
+    static computeLength(points) {
+        let d = 0;
+        let p0 = points[0];
+        let p1;
+        const count = points.length;
+        for (let i = 1; i < count; i++) {
+            p1 = points[i];
+            const dx = p1[0] - p0[0];
+            const dy = p1[1] - p0[1];
+            d += Math.sqrt(dx * dx + dy * dy);
+            p0 = p1;
+        }
+        return d;
+    }
+    static resample(inputPoints, sampleCount) {
+        const count = inputPoints.length;
+        const length = GestureUtils.computeLength(inputPoints);
+        const increment = length / (sampleCount - 1);
+        let lastX = inputPoints[0][0];
+        let lastY = inputPoints[0][1];
+        let distanceSoFar = 0;
+        const outputPoints = [
+            [lastX, lastY]
+        ];
+        for (let i = 1; i < count;) {
+            const currentX = inputPoints[i][0];
+            const currentY = inputPoints[i][1];
+            const deltaX = currentX - lastX;
+            const deltaY = currentY - lastY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (distanceSoFar + distance >= increment) {
+                const ratio = (increment - distanceSoFar) / distance;
+                const nx = lastX + ratio * deltaX;
+                const ny = lastY + ratio * deltaY;
+                lastX = nx;
+                lastY = ny;
+                distanceSoFar = 0;
+                outputPoints.push([nx, ny]);
+            }
+            else {
+                lastX = currentX;
+                lastY = currentY;
+                distanceSoFar += distance;
+                i++;
+            }
+        }
+        for (let i = outputPoints.length; i < sampleCount; i++) {
+            outputPoints.push([lastX, lastY]);
+        }
+        return outputPoints;
     }
     static euclideanDistanceSquared(vector1, vector2) {
         let squaredDistance = 0;

@@ -8,7 +8,7 @@ class GestureTool {
         this.saveKey = "GesturePool";
         this.similarity = GestureUtils_1.Similarity.OptimalCos;
         this.threshold = 0.2;
-        this.pointCount = 16;
+        this.sampleCount = 16;
         this.orientationCount = 8;
         this.ratioSensitive = false;
         this.scaledSize = 200;
@@ -16,7 +16,7 @@ class GestureTool {
     }
     createGesture(points) {
         const stroke = new GestureStroke_1.default();
-        stroke.pointCount = this.pointCount;
+        stroke.sampleCount = this.sampleCount;
         stroke.orientationCount = this.orientationCount;
         stroke.ratioSensitive = this.ratioSensitive;
         stroke.scaledSize = this.scaledSize;
@@ -84,8 +84,8 @@ class GestureTool {
         };
     }
 }
-window['GestureStore'] = GesturePool_1.default;
+window['GesturePool'] = GesturePool_1.default;
 window['GestureUtils'] = GestureUtils_1.default;
-window['Polyline'] = GestureStroke_1.default;
+window['GestureStroke'] = GestureStroke_1.default;
 window['GestureTool'] = GestureTool;
 window['Similarity'] = GestureUtils_1.Similarity;

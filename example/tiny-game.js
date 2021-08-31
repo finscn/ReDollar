@@ -177,8 +177,8 @@ Game.prototype = {
     init: function() {
 
         var canvas = this.canvas = document.getElementById(this.canvas) || this.canvas;
-        canvas.width = Config.width / window.devicePixelRatio;
-        canvas.height = Config.height / window.devicePixelRatio;
+        canvas.width = Config.width;
+        canvas.height = Config.height;
         canvas.retinaResolutionEnabled = false;
         if (canvas.style && "ejecta" in window) {
             canvas.style.width = window.innerWidth + "px";
@@ -262,8 +262,6 @@ function pageOnLoad() {
     if (window.devicePixelRatio > 1 && minPixels <= 1280) {
         Config.retinaEnabled = true;
         Config.devicePixelRatio = window.devicePixelRatio;
-        Config.width *= Config.devicePixelRatio;
-        Config.height *= Config.devicePixelRatio;
     }
     Config.touchPixelRatio = Config.devicePixelRatio;
     console.log("Config size: ", Config.width, Config.height);

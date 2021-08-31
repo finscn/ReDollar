@@ -1,12 +1,26 @@
 "use strick";
 
-
-Config.saveKey = "GestureTemplate"
-Config.storePrefix = ""
+Config.saveKey = "Dollar_GestureTemplate"
+Config.storePrefix = "Dollar"
 
 for (var p in Config.default){
     gestureTool[p] = Config.default[p]
 }
+
+// GestureStroke.prototype.translate = function() {
+//     const centroid = this.computeCentroid()
+//     GestureUtils.translate(this.points, -centroid[0], -centroid[1])
+//     this.translated = true
+// }
+
+// GestureStroke.prototype.rotate = function () {
+//     const centroid = this.computeCentroid()
+//     this.angle = this.computeAngle(centroid)
+//     GestureUtils.rotateAround(this.points, -this.angle, centroid)
+
+//     GestureUtils.translate(this.points, -centroid[0], -centroid[1])
+//     this.rotated = true
+// }
 
 
 function init() {
@@ -27,19 +41,6 @@ function init() {
 function addGesture() {
     if (!CurrentGesture) {
         return;
-    }
-
-    if (!CurrentGesture.scaled) {
-        CurrentGesture.scale()
-    }
-    if (!CurrentGesture.resampled) {
-        CurrentGesture.resample()
-    }
-    if (!CurrentGesture.translated) {
-        CurrentGesture.translate()
-    }
-    if (!CurrentGesture.rotated) {
-        CurrentGesture.rotate()
     }
 
     var name = null; // prompt("手势名称", "");
@@ -97,6 +98,5 @@ function testGesture(transform) {
         MatchGesture = false;
     }
 }
-
 
 //
