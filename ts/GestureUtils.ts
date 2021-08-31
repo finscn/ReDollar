@@ -220,8 +220,9 @@ export default class GestureUtils {
             angle = - Math.PI / 2
         } else { // -PI < alpha < PI
             angle = Math.atan2(targetVector[1], targetVector[0])
-            this.rotate(points, -angle)
         }
+
+        this.rotate(points, -angle)
 
         let minX: number = Number.MAX_VALUE
         let minY: number = Number.MAX_VALUE
@@ -243,6 +244,7 @@ export default class GestureUtils {
                 maxY = p[1]
             }
         }
+
         return [
             angle,
             maxX - minX,

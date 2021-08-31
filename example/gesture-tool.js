@@ -61,7 +61,7 @@ const TWO_PI = Math.PI * 2;
 class GestureStroke {
     constructor() {
         this.sampleCount = 16;
-        // rotateOBB = false // rotateOBB or rotateIndicativeAngle
+        this.scaleOBB = true;
         this.orientationCount = 1;
         this.ratioSensitive = false;
         this.scaledSize = 200;
@@ -78,8 +78,14 @@ class GestureStroke {
     }
     transform() {
         this.translate();
-        this.rotate();
-        this.scale();
+        if (this.scaleOBB) {
+            this.scale();
+            this.rotate();
+        }
+        else {
+            this.rotate();
+            this.scale();
+        }
         this.resample();
     }
     translate() {
@@ -110,13 +116,28 @@ class GestureStroke {
         }
         const points = this.points;
         // 计算AABB/OBB
-        this.aabb = GestureUtils_1.default.computeAABB(points);
-        const width = this.aabb[2];
-        const height = this.aabb[3];
+        let width;
+        let height;
+        let angle = 0;
+        if (this.scaleOBB) {
+            const obb = GestureUtils_1.default.computeOBB(points);
+            angle = obb[0];
+            width = obb[1];
+            height = obb[2];
+            console.log(obb);
+        }
+        else {
+            const aabb = GestureUtils_1.default.computeAABB(points);
+            width = aabb[2];
+            height = aabb[3];
+        }
         // 缩放AABB/OBB
         const scaleX = this.scaledSize / width;
         const scaleY = this.scaledSize / height;
         GestureUtils_1.default.scale(points, scaleX, scaleY);
+        if (this.scaleOBB) {
+            GestureUtils_1.default.rotate(points, angle);
+        }
         this.scaled = true;
     }
     resample() {
@@ -365,8 +386,8 @@ class GestureUtils {
         }
         else { // -PI < alpha < PI
             angle = Math.atan2(targetVector[1], targetVector[0]);
-            this.rotate(points, -angle);
         }
+        this.rotate(points, -angle);
         let minX = Number.MAX_VALUE;
         let minY = Number.MAX_VALUE;
         let maxX = Number.MIN_VALUE;
@@ -473,6 +494,7 @@ class GestureTool {
         this.sampleCount = 16;
         this.orientationCount = 8;
         this.ratioSensitive = false;
+        this.scaleOBB = false;
         this.scaledSize = 200;
         this.gesturePool = GesturePool_1.default.getInstance();
     }
@@ -481,6 +503,7 @@ class GestureTool {
         stroke.sampleCount = this.sampleCount;
         stroke.orientationCount = this.orientationCount;
         stroke.ratioSensitive = this.ratioSensitive;
+        stroke.scaleOBB = this.scaleOBB;
         stroke.scaledSize = this.scaledSize;
         stroke.init(points);
         return stroke;

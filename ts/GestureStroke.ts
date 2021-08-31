@@ -14,7 +14,7 @@ export default class GestureStroke {
 
     sampleCount = 16
 
-    // rotateOBB = false // rotateOBB or rotateIndicativeAngle
+    scaleOBB = true
     orientationCount = 1
 
     ratioSensitive = false
@@ -31,7 +31,6 @@ export default class GestureStroke {
     angle: number
 
     vector: number[]
-    aabb: number[]
 
     scaled: boolean
     resampled: boolean
@@ -48,8 +47,13 @@ export default class GestureStroke {
 
     transform() {
         this.translate()
-        this.rotate()
-        this.scale()
+        if (this.scaleOBB) {
+            this.scale()
+            this.rotate()
+        } else {
+            this.rotate()
+            this.scale()
+        }
         this.resample()
     }
 
@@ -72,6 +76,7 @@ export default class GestureStroke {
     }
 
     rotate() {
+
         // 旋转
         this.angle = this.computeAngle()
         GestureUtils.rotate(this.points, -this.angle)
@@ -87,15 +92,30 @@ export default class GestureStroke {
         const points = this.points
 
         // 计算AABB/OBB
-        this.aabb = GestureUtils.computeAABB(points)
-        const width = this.aabb[2]
-        const height = this.aabb[3]
+        let width: number
+        let height: number
+        let angle: number = 0
+        if (this.scaleOBB) {
+            const obb = GestureUtils.computeOBB(points)
+            angle = obb[0]
+            width = obb[1]
+            height = obb[2]
+            console.log(obb)
+        } else {
+            const aabb = GestureUtils.computeAABB(points)
+            width = aabb[2]
+            height = aabb[3]
+        }
+
 
         // 缩放AABB/OBB
         const scaleX = this.scaledSize / width
         const scaleY = this.scaledSize / height
-
         GestureUtils.scale(points, scaleX, scaleY)
+
+        if (this.scaleOBB) {
+            GestureUtils.rotate(points, angle)
+        }
 
         this.scaled = true
     }

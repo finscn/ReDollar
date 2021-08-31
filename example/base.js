@@ -287,6 +287,10 @@ function loadGestures() {
     $id('toggleRatio') && ($id('toggleRatio').checked = gestureTool.ratioSensitive)
     $id('doScale') && ($id('doScale').disabled = gestureTool.ratioSensitive)
 
+    const scaleOBB = loadData('scaleOBB')
+    gestureTool.scaleOBB = scaleOBB === 'true' ? true : false
+    $id('toggleScaleOBB') && ($id('toggleScaleOBB').checked = gestureTool.scaleOBB)
+
     const rec = loadData('RecordPoints')
     if (rec) {
         RecordPoints = JSON.parse(rec) || {}
@@ -341,6 +345,19 @@ function doSetRatio(target) {
     saveData('ratioSensitive', gestureTool.ratioSensitive)
 
     $id('doScale').disabled = gestureTool.ratioSensitive
+}
+
+function doSetScaleOBB(target) {
+    console.log(target.id, target.checked)
+    gestureTool.scaleOBB = !!target.checked
+    saveData('scaleOBB', gestureTool.scaleOBB)
+
+    if (gestureTool.scaleOBB) {
+        $id('doRotate').parentNode.insertBefore($id('doScale'), $id('doRotate'))
+    } else {
+        $id('doRotate').parentNode.insertBefore($id('doRotate'), $id('doScale'))
+    }
+
 }
 
 function doSetOrientation(target) {
@@ -417,7 +434,7 @@ function doTranslate() {
 function doRotate() {
     if (CurrentGesture) {
         var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
-        if (!CurrentGesture.translated){
+        if (!CurrentGesture.translated) {
             GestureUtils.translate(CurrentGesture.points, -c1[0], -c1[1])
         }
         CurrentGesture.rotate()
@@ -461,6 +478,7 @@ Config.default = {
     sampleCount: 32,
     orientationCount: 1,
     ratioSensitive: false,
+    scaleOBB: false,
     scaleSize: 200,
 }
 

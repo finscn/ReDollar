@@ -11,6 +11,7 @@ class GestureTool {
         this.sampleCount = 16;
         this.orientationCount = 8;
         this.ratioSensitive = false;
+        this.scaleOBB = false;
         this.scaledSize = 200;
         this.gesturePool = GesturePool_1.default.getInstance();
     }
@@ -19,6 +20,7 @@ class GestureTool {
         stroke.sampleCount = this.sampleCount;
         stroke.orientationCount = this.orientationCount;
         stroke.ratioSensitive = this.ratioSensitive;
+        stroke.scaleOBB = this.scaleOBB;
         stroke.scaledSize = this.scaledSize;
         stroke.init(points);
         return stroke;

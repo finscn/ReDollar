@@ -13,6 +13,7 @@ class GestureTool {
     sampleCount = 16
     orientationCount = 8
     ratioSensitive = false
+    scaleOBB = false
     scaledSize = 200
 
     gesturePool: GesturePool
@@ -26,6 +27,7 @@ class GestureTool {
         stroke.sampleCount = this.sampleCount
         stroke.orientationCount = this.orientationCount
         stroke.ratioSensitive = this.ratioSensitive
+        stroke.scaleOBB = this.scaleOBB
         stroke.scaledSize = this.scaledSize
 
         stroke.init(points)

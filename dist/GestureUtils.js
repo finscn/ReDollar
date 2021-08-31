@@ -198,8 +198,8 @@ class GestureUtils {
         }
         else { // -PI < alpha < PI
             angle = Math.atan2(targetVector[1], targetVector[0]);
-            this.rotate(points, -angle);
         }
+        this.rotate(points, -angle);
         let minX = Number.MAX_VALUE;
         let minY = Number.MAX_VALUE;
         let maxX = Number.MIN_VALUE;
