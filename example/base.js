@@ -308,6 +308,7 @@ function loadGestures() {
     setKeepAspectRatio()
     setRotateOBB()
     setScaleOBB()
+    setDrawOBB()
 
     const rec = loadData('RecordPoints')
     if (rec) {
@@ -483,6 +484,18 @@ function setScaleOBB(target) {
     saveData('scaleOBB', Config.scaleOBB)
 }
 
+function setDrawOBB(target) {
+    if (!target) {
+        const drawOBB = loadData('drawOBB')
+        Config.drawOBB = drawOBB === 'true' ? true : false
+        $id('setDrawOBB') && ($id('setDrawOBB').checked = Config.drawOBB)
+        return
+    }
+    console.log(target.id, target.checked)
+    Config.drawOBB = !!target.checked
+    saveData('drawOBB', Config.drawOBB)
+}
+
 
 ///////////////////////////////
 ///////////////////////////////
@@ -605,7 +618,7 @@ Config.storePrefix = "pp";
 
 Config.rotateOBB = false;
 Config.scaleOBB = false;
-Config.drawOBB = true;
+Config.drawOBB = false;
 
 Config.default = {
     similarity: Similarity.OptimalCos,
