@@ -1,3 +1,5 @@
+let capture = false
+
 function $id(id) {
     return document.getElementById(id);
 }
@@ -30,7 +32,7 @@ function initTouchEvent(dom) {
         event.preventDefault();
     }, true);
 
-    dom.addEventListener(move, function () {
+    dom.addEventListener(move, function (event) {
         var touch = useTouch ? event.changedTouches[0] : event;
 
         if (TouchInfo.touched) {
@@ -40,7 +42,7 @@ function initTouchEvent(dom) {
         event.preventDefault();
     }, true);
 
-    dom.addEventListener(end, function () {
+    dom.addEventListener(end, function (event) {
         TouchInfo.touched = false;
         game.scene.afterDraw();
         event.preventDefault();
@@ -175,7 +177,7 @@ function initGame() {
                     var tx = originalPoint[0];
                     var ty = originalPoint[1];
 
-                    if (Config.drawCoordinate) {
+                    if (!capture && Config.drawCoordinate) {
                         var l = 400;
                         drawLine(context, [-l, 0], [l, 0], "#bbbbbb", tx, ty);
                         drawLine(context, [0, -l], [0, l], "#bbbbbb", tx, ty);
@@ -185,12 +187,21 @@ function initGame() {
                         }
                         context.fillStyle = "#990000";
                         context.fillRect(tx - 3, ty - 3, 6, 6);
+
+                        // const scaleSize = gestureTool.scaleSize;
+                        // context.strokeRect(tx - scaleSize / 2, ty - scaleSize/2, scaleSize, scaleSize);
                     }
 
 
-                    var names = Object.keys(RecordPoints)
-                    if (names.length == 1) {
-                        var points = RecordPoints[names[0]]
+                    // var names = Object.keys(RecordPoints)
+                    // if (names.length == 1) {
+                    //     var points = RecordPoints[names[0]]
+                    //     context.lineWidth = 2;
+                    //     drawPoly(context, points, "#bb9999", tx, ty);
+                    // }
+
+                    if (!capture && MatchGesture) {
+                        var points = RecordPoints[MatchGesture]
                         context.lineWidth = 2;
                         drawPoly(context, points, "#bb9999", tx, ty);
                     }
@@ -209,17 +220,24 @@ function initGame() {
                             context.fillRect(p[0] - 4, p[1] - 4, 8, 8);
                         });
 
-                        if (Centroid) {
+                        if (!capture && Centroid) {
                             context.fillStyle = "darkgreen";
                             context.fillRect(Centroid[0] - 5, Centroid[1] - 5, 10, 10);
                             drawLine(context, Points[0], Centroid, "#6699ff");
                         }
                     }
 
+                    if (!capture && Config.drawOBB && obbRect) {
+                        context.lineWidth = 3;
+                        drawPoly(context, obbRect, "#00bb00", 0, 0);
+                    }
+
                     context.globalAlpha = 1;
                     if (CurrentGesture && CurrentGesture.translated) {
                         context.restore();
                     }
+
+
                     var x = 4,
                         y = 4;
                     var size = 80,
@@ -249,12 +267,25 @@ function initGame() {
 
 }
 
+function init() {
+    for (var p in Config.default) {
+        gestureTool[p] = Config.default[p]
+    }
+
+    loadGestures();
+    initGame();
+    $id('toolbar').style.left = ($id('canvas').clientLeft + $id('canvas').clientWidth + 4) + 'px'
+    $id('toolbar').style.top = 4 + 'px'
+}
+
 function reset() {
     step = 0;
     deltaX = 0;
     deltaY = 0;
 
     Points = [];
+    obbRect = null;
+    obbRectAngle = 0;
     CurrentGesture = null;
     Centroid = null;
     MatchGesture = null;
@@ -270,26 +301,13 @@ function loadData(name) {
 }
 
 function loadGestures() {
-    const threshold = loadData('threshold')
-    gestureTool.threshold = Number(threshold) || 0.25
-    $id('threshold') && ($id('threshold').value = gestureTool.threshold)
 
-    const orientationCount = loadData('orientationCount')
-    gestureTool.orientationCount = Number(orientationCount) || 1
-    $id('toggleOrientation') && ($id('toggleOrientation').value = gestureTool.orientationCount)
-
-    const sampleCount = loadData('sampleCount')
-    gestureTool.sampleCount = Number(sampleCount) || 32
-    $id('sampleCount') && ($id('sampleCount').value = gestureTool.sampleCount)
-
-    const ratioSensitive = loadData('ratioSensitive')
-    gestureTool.ratioSensitive = ratioSensitive === 'true' ? true : false
-    $id('toggleRatio') && ($id('toggleRatio').checked = gestureTool.ratioSensitive)
-    $id('doScale') && ($id('doScale').disabled = gestureTool.ratioSensitive)
-
-    const scaleOBB = loadData('scaleOBB')
-    gestureTool.scaleOBB = scaleOBB === 'true' ? true : false
-    $id('toggleScaleOBB') && ($id('toggleScaleOBB').checked = gestureTool.scaleOBB)
+    setSampleCount()
+    setThreshold()
+    setOrientationCount()
+    setKeepAspectRatio()
+    setRotateOBB()
+    setScaleOBB()
 
     const rec = loadData('RecordPoints')
     if (rec) {
@@ -315,11 +333,62 @@ function clearAllGestures() {
     RecordPoints = {}
     saveData('RecordPoints', JSON.stringify(RecordPoints))
 
-    Points = [];
-    $id("gcount").innerHTML = 0;
+    doReload()
+}
+
+function addGesture() {
+    if (!CurrentGesture) {
+        return;
+    }
+
+    transform()
+
+    var name = null; // prompt("手势名称", "");
+    if (!name) {
+        name = 'N_' + Object.keys(RecordPoints).length
+    }
+
+    this.gestureTool.addGesture(name, CurrentGesture)
+    this.gestureTool.saveGestures();
+
+    RecordPoints[name] = CurrentGesture.points
+    saveData('RecordPoints', JSON.stringify(RecordPoints))
+
+    var names = gestureTool.getAllGestureNames();
+    var count = names.length
+    $id("gcount").innerHTML = count;
 
     doReload()
 }
+
+
+function testGesture(transform) {
+    if (!CurrentGesture) {
+        return
+    }
+    if (transform) {
+        transform()
+        step = 4
+        Points = CurrentGesture.points
+        Centroid = [0, 0]
+    }
+    CurrentGesture.vectorize()
+    var t, result
+
+    t = Date.now();
+    result = gestureTool.recognize(CurrentGesture.vector);
+    recognizeTime = Date.now() - t;
+    console.log(result, recognizeTime)
+
+    if (result && result.success) {
+        MatchGesture = result.gesture
+    }
+
+    if (!MatchGesture) {
+        MatchGesture = false;
+    }
+}
+
 
 function doReload() {
     window.location.reload();
@@ -333,131 +402,192 @@ function doReload() {
 ///////////////////////////////
 
 
-function doSetThreshold(target) {
-    console.log(target.id, target.value)
-    gestureTool.threshold = Number(target.value)
-    saveData('threshold', gestureTool.threshold)
-}
-
-function doSetRatio(target) {
-    console.log(target.id, target.checked)
-    gestureTool.ratioSensitive = !!target.checked
-    saveData('ratioSensitive', gestureTool.ratioSensitive)
-
-    $id('doScale').disabled = gestureTool.ratioSensitive
-}
-
-function doSetScaleOBB(target) {
-    console.log(target.id, target.checked)
-    gestureTool.scaleOBB = !!target.checked
-    saveData('scaleOBB', gestureTool.scaleOBB)
-
-    if (gestureTool.scaleOBB) {
-        $id('doRotate').parentNode.insertBefore($id('doScale'), $id('doRotate'))
-    } else {
-        $id('doRotate').parentNode.insertBefore($id('doRotate'), $id('doScale'))
+function setSampleCount(target) {
+    if (!target) {
+        const sampleCount = loadData('sampleCount')
+        gestureTool.sampleCount = Number(sampleCount) || 32
+        $id('sampleCount') && ($id('sampleCount').value = gestureTool.sampleCount)
+        return
     }
-
-}
-
-function doSetOrientation(target) {
-    console.log(target.id, target.value)
-    gestureTool.orientationCount = Number(target.value) || 1
-    saveData('orientationCount', gestureTool.orientationCount)
-}
-
-function doSetSampleCount(target) {
     console.log(target.id, target.value)
     gestureTool.sampleCount = Number(target.value) || 32
     saveData('sampleCount', gestureTool.sampleCount)
 }
 
-///////////////////////////////
-///////////////////////////////
-///////////////////////////////
-///////////////////////////////
-///////////////////////////////
 
-
-function doScale() {
-    if (CurrentGesture) {
-
-        var c0 = GestureUtils.computeCentroid(Points)
-        CurrentGesture.scale()
-        var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
-        deltaX = c1[0] - c0[0]
-        deltaY = c1[1] - c0[1]
-        // if (CurrentGesture.resampled) {
-        //     deltaX = 0
-        //     deltaY = 0
-        // }
-
-        Points = []
-        CurrentGesture.points.forEach(function (p) {
-            Points.push([p[0] - deltaX, p[1] - deltaY])
-        })
+function setThreshold(target) {
+    if (!target) {
+        const threshold = loadData('threshold')
+        gestureTool.threshold = Number(threshold) || 0.25
+        $id('threshold') && ($id('threshold').value = gestureTool.threshold)
+        return
     }
+    console.log(target.id, target.value)
+    gestureTool.threshold = Number(target.value)
+    saveData('threshold', gestureTool.threshold)
 }
 
-function doResample(afterScale) {
-    if (CurrentGesture) {
 
-        CurrentGesture.resample()
-
-        var dx = 0
-        var dy = 0
-        if (afterScale) {
-            dx = deltaX
-            dy = deltaY
-        }
-
-        Points = []
-        CurrentGesture.points.forEach(function (p) {
-            Points.push([p[0] - dx, p[1] - dy])
-        })
+function setOrientationCount(target) {
+    if (!target) {
+        const orientationCount = loadData('orientationCount')
+        gestureTool.orientationCount = Number(orientationCount) || 1
+        $id('toggleOrientation') && ($id('toggleOrientation').value = gestureTool.orientationCount)
+        return
     }
+    console.log(target.id, target.value)
+    gestureTool.orientationCount = Number(target.value) || 1
+    saveData('orientationCount', gestureTool.orientationCount)
 }
+
+
+function setKeepAspectRatio(target) {
+    if (!target) {
+        const keepAspectRatio = loadData('keepAspectRatio')
+        gestureTool.keepAspectRatio = keepAspectRatio === 'true' ? true : false
+        $id('setKeepAspectRatio') && ($id('setKeepAspectRatio').checked = gestureTool.keepAspectRatio)
+
+        // $id('doScale').disabled = gestureTool.keepAspectRatio
+        return
+    }
+    console.log(target.id, target.checked)
+    gestureTool.keepAspectRatio = !!target.checked
+    saveData('keepAspectRatio', gestureTool.keepAspectRatio)
+
+    // $id('doScale').disabled = gestureTool.keepAspectRatio
+}
+
+
+function setRotateOBB(target) {
+    if (!target) {
+        const rotateOBB = loadData('rotateOBB')
+        Config.rotateOBB = rotateOBB === 'true' ? true : false
+        $id('setRotateOBB') && ($id('setRotateOBB').checked = Config.rotateOBB)
+        return
+    }
+    console.log(target.id, target.checked)
+    Config.rotateOBB = !!target.checked
+    saveData('rotateOBB', Config.rotateOBB)
+}
+
+
+function setScaleOBB(target) {
+    if (!target) {
+        const scaleOBB = loadData('scaleOBB')
+        Config.scaleOBB = scaleOBB === 'true' ? true : false
+        $id('setScaleOBB') && ($id('setScaleOBB').checked = Config.scaleOBB)
+        return
+    }
+    console.log(target.id, target.checked)
+    Config.scaleOBB = !!target.checked
+    saveData('scaleOBB', Config.scaleOBB)
+}
+
+
+///////////////////////////////
+///////////////////////////////
+///////////////////////////////
+///////////////////////////////
+///////////////////////////////
+
 
 function doTranslate() {
-    if (CurrentGesture) {
-        Centroid = [0, 0]
-
-        CurrentGesture.translate()
-
-        Points = []
-        CurrentGesture.points.forEach(function (p) {
-            Points.push([p[0], p[1]])
-        })
+    if (!CurrentGesture || CurrentGesture.translated) {
+        return
     }
+    Centroid = [0, 0]
+
+    CurrentGesture.translate()
+
+    Points = []
+    CurrentGesture.points.forEach(function (p) {
+        Points.push([p[0], p[1]])
+    })
+
+    obbRect = getOBBRect(GestureUtils.computeOBB(Points))
 }
 
 function doRotate() {
-    if (CurrentGesture) {
-        var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
-        if (!CurrentGesture.translated) {
-            GestureUtils.translate(CurrentGesture.points, -c1[0], -c1[1])
-        }
-        CurrentGesture.rotate()
-        if (!CurrentGesture.translated) {
-            GestureUtils.translate(CurrentGesture.points, c1[0], c1[1])
-        }
-
-        var c0 = GestureUtils.computeCentroid(Points)
-
-        var dx = c1[0] - c0[0]
-        var dy = c1[1] - c0[1]
-
-        if (CurrentGesture.translated) {
-            Centroid = [0, 0]
-        } else {
-            Centroid = [c1[0] - dx, c1[1] - dy]
-        }
-
-        Points = []
-        CurrentGesture.points.forEach(function (p) {
-            Points.push([p[0] - dx, p[1] - dy])
-        })
+    if (!CurrentGesture || CurrentGesture.rotated) {
+        return
     }
+
+    var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
+
+    if (Config.rotateOBB) {
+        CurrentGesture.rotateOBB()
+    } else {
+        CurrentGesture.rotate()
+    }
+
+    var c0 = GestureUtils.computeCentroid(Points)
+
+    var dx = c1[0] - c0[0]
+    var dy = c1[1] - c0[1]
+
+    Centroid = [0, 0]
+
+    Points = []
+    CurrentGesture.points.forEach(function (p) {
+        Points.push([p[0] - dx, p[1] - dy])
+    })
+    if (obbRect) {
+        GestureUtils.rotate(obbRect, -CurrentGesture.angle)
+    }
+}
+
+function doScale() {
+    if (!CurrentGesture || CurrentGesture.scaled) {
+        return
+    }
+
+    var c0 = GestureUtils.computeCentroid(Points)
+
+    if (Config.scaleOBB) {
+        CurrentGesture.scaleOBB()
+    } else {
+        CurrentGesture.scale()
+    }
+
+    var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
+    deltaX = c1[0] - c0[0]
+    deltaY = c1[1] - c0[1]
+    // if (CurrentGesture.resampled) {
+    //     deltaX = 0
+    //     deltaY = 0
+    // }
+
+    Points = []
+    CurrentGesture.points.forEach(function (p) {
+        Points.push([p[0] - deltaX, p[1] - deltaY])
+    })
+
+    if (Config.scaleOBB) {
+        obbRect = getOBBRect(GestureUtils.computeOBB(Points))
+    } else {
+        obbRect = getAABBRect(GestureUtils.computeAABB(Points))
+    }
+
+}
+
+function doResample(afterScale) {
+    if (!CurrentGesture || CurrentGesture.resampled) {
+        return
+    }
+
+    CurrentGesture.resample()
+
+    var dx = 0
+    var dy = 0
+    if (afterScale) {
+        dx = deltaX
+        dy = deltaY
+    }
+
+    Points = []
+    CurrentGesture.points.forEach(function (p) {
+        Points.push([p[0] - dx, p[1] - dy])
+    })
 }
 
 ///////////////////////////////
@@ -473,13 +603,18 @@ Config.bgColor = "#ffffff"
 Config.drawCoordinate = true;
 Config.storePrefix = "pp";
 
+Config.rotateOBB = false;
+Config.scaleOBB = false;
+Config.drawOBB = true;
+
 Config.default = {
+    similarity: Similarity.OptimalCos,
     threshold: 0.25,
+
     sampleCount: 32,
     orientationCount: 1,
-    ratioSensitive: false,
-    scaleOBB: false,
     scaleSize: 200,
+    keepAspectRatio: false,
 }
 
 var GestureImgs = {};
@@ -492,6 +627,8 @@ var gestureTool = new GestureTool()
 
 var Points = [];
 var RecordPoints = {};
+var obbRect = null;
+var obbRectAngle = 0;
 
 var CurrentGesture;
 var Centroid;
@@ -506,3 +643,55 @@ var recognizeTime = 0;
 var step = 0;
 var deltaX = 0;
 var deltaY = 0;
+
+
+function getOBBRect(obb) {
+    const angle = obb[0]
+    obbRectAngle = angle
+    const x1 = obb[1]
+    const y1 = obb[2]
+    const x2 = obb[1] + obb[3]
+    const y2 = obb[2] + obb[4]
+    const rect = [
+        [x1, y1],
+        [x2, y1],
+        [x2, y2],
+        [x1, y2],
+        [x1, y1]
+    ]
+    GestureUtils.rotate(rect, angle)
+    return rect
+}
+
+function getAABBRect(aabb) {
+    const x1 = aabb[0]
+    const y1 = aabb[1]
+    const x2 = aabb[0] + aabb[2]
+    const y2 = aabb[1] + aabb[3]
+    const rect = [
+        [x1, y1],
+        [x2, y1],
+        [x2, y2],
+        [x1, y2],
+        [x1, y1]
+    ]
+    return rect
+}
+
+function transform() {
+    CurrentGesture.translate()
+
+    if (Config.rotateOBB) {
+        CurrentGesture.rotateOBB()
+    } else {
+        CurrentGesture.rotate()
+    }
+
+    if (Config.scaleOBB) {
+        CurrentGesture.scaleOBB()
+    } else {
+        CurrentGesture.scale()
+    }
+
+    CurrentGesture.resample()
+}

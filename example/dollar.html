@@ -91,18 +91,25 @@
 
     <div id="toolbar">
         <hr>
-        <div>容差:<input id="threshold" type="text" value="0.25" onchange="doSetThreshold(this)"></div>
+        <div>容差:<input id="threshold" type="text" value="0.25" onchange="setThreshold(this)"></div>
         <div>采样点数&nbsp;&nbsp;
-        <select id="sampleCount" onchange="doSetSampleCount(this);">
+        <select id="sampleCount" onchange="setSampleCount(this);">
             <option value="16">16</option>
             <option value="24">24</option>
             <option value="32" selected>32</option>
         </select></div>
+        <div>角度区间&nbsp;&nbsp;
+            <select id="setOrientationCount" onchange="setOrientationCount(this);">
+                <option value="1">1</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+            </select>
+        </div>
         <hr>
         <button type="button" onclick="doResample(false);">重新采样</button>
+        <button type="button" onclick="doTranslate();">移动</button>
         <button type="button" onclick="doRotate();">旋转</button>
         <button id="doScale" type="button" onclick="doScale();">缩放</button>
-        <button type="button" onclick="doTranslate();">移动</button>
         <hr>
         <button type="button" onclick="testGesture();">检测</button>
         <hr>

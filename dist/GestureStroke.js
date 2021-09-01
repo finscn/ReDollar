@@ -9,12 +9,9 @@ const TWO_PI = Math.PI * 2;
 class GestureStroke {
     constructor() {
         this.sampleCount = 16;
-        this.scaleOBB = true;
         this.orientationCount = 1;
-        this.ratioSensitive = false;
         this.scaledSize = 200;
-        // useAngleInvariance
-        // useBoundedRotationInvariance
+        this.keepAspectRatio = false;
         this.id = null;
     }
     init(inputPoints) {
@@ -23,18 +20,6 @@ class GestureStroke {
         this.resampled = false;
         this.translated = false;
         this.rotated = false;
-    }
-    transform() {
-        this.translate();
-        if (this.scaleOBB) {
-            this.scale();
-            this.rotate();
-        }
-        else {
-            this.rotate();
-            this.scale();
-        }
-        this.resample();
     }
     translate() {
         let inputPoints;
@@ -54,81 +39,89 @@ class GestureStroke {
     }
     rotate() {
         // 旋转
-        this.angle = this.computeAngle();
+        this.angle = this.computeIndicativeAngle();
         GestureUtils_1.default.rotate(this.points, -this.angle);
         this.rotated = true;
     }
     scale() {
-        if (this.ratioSensitive) {
-            return;
-        }
         const points = this.points;
         // 计算AABB/OBB
-        let width;
-        let height;
-        let angle = 0;
-        if (this.scaleOBB) {
-            const obb = GestureUtils_1.default.computeOBB(points);
-            angle = obb[0];
-            width = obb[1];
-            height = obb[2];
-            console.log(obb);
+        const aabb = GestureUtils_1.default.computeAABB(points);
+        const width = aabb[2];
+        const height = aabb[3];
+        let scaleX;
+        let scaleY;
+        if (this.keepAspectRatio) {
+            if (width > height) {
+                scaleX = this.scaledSize / width;
+                scaleY = scaleX;
+            }
+            else {
+                scaleY = this.scaledSize / height;
+                scaleX = scaleY;
+            }
         }
         else {
-            const aabb = GestureUtils_1.default.computeAABB(points);
-            width = aabb[2];
-            height = aabb[3];
+            scaleX = this.scaledSize / width;
+            scaleY = this.scaledSize / height;
         }
         // 缩放AABB/OBB
+        GestureUtils_1.default.scale(points, scaleX, scaleY);
+        this.scaled = true;
+    }
+    rotateOBB() {
+        const points = this.points;
+        const obb = this.obb = this.obb || GestureUtils_1.default.computeOBB(points);
+        // 旋转
+        const angle = obb[0];
+        this.angle = this.fixAngle(angle);
+        GestureUtils_1.default.rotate(points, -this.angle);
+        this.rotated = true;
+    }
+    scaleOBB() {
+        const points = this.points;
+        const obb = this.obb = this.obb || GestureUtils_1.default.computeOBB(points);
+        const angle = obb[0];
+        const width = obb[3];
+        const height = obb[4];
+        GestureUtils_1.default.rotate(points, -angle);
         const scaleX = this.scaledSize / width;
         const scaleY = this.scaledSize / height;
         GestureUtils_1.default.scale(points, scaleX, scaleY);
-        if (this.scaleOBB) {
-            GestureUtils_1.default.rotate(points, angle);
-        }
-        this.scaled = true;
+        GestureUtils_1.default.rotate(points, -angle);
     }
     resample() {
         const inputPoints = this.points || this.inputPoints;
         this.points = GestureUtils_1.default.resample(inputPoints, this.sampleCount);
         this.resampled = true;
     }
-    computeAngle(centroid) {
+    computeIndicativeAngle(centroid) {
         centroid = centroid || [0, 0];
         const first = this.points[0];
         let angle = Math.atan2(first[1] - centroid[0], first[0] - centroid[1]);
-        if (this.orientationCount > 1) {
-            if (angle < 0) {
-                angle = TWO_PI + angle;
-            }
-            const sector = TWO_PI / this.orientationCount;
-            // console.log(sector * 180 / Math.PI, angle * 180 / Math.PI)
-            const baseOrientation = Math.round(angle / sector) * sector;
-            angle = angle - baseOrientation;
-            // console.log(baseOrientation * 180 / Math.PI, angle * 180 / Math.PI)
+        angle = this.fixAngle(angle);
+        return this.fixAngle(angle);
+    }
+    fixAngle(angle) {
+        if (this.orientationCount <= 1) {
+            return angle;
         }
+        if (angle < 0) {
+            angle = TWO_PI + angle;
+        }
+        const sector = TWO_PI / this.orientationCount;
+        // console.log(sector * 180 / Math.PI, angle * 180 / Math.PI)
+        const baseOrientation = Math.round(angle / sector) * sector;
+        angle = angle - baseOrientation;
+        // console.log(baseOrientation * 180 / Math.PI, angle * 180 / Math.PI)
         return angle;
     }
     vectorize() {
         if (!this.points) {
             return;
         }
-        const vector = this.vector = this.vector || [];
-        vector.length = 0;
-        let sum = 0;
-        let count = this.sampleCount;
-        for (let i = 0; i < count; i++) {
-            const p = this.points[i];
-            const x = p[0];
-            const y = p[1];
-            vector.push(x, y);
-            sum += x * x + y * y;
-        }
-        const magnitude = Math.sqrt(sum);
-        count <<= 1;
-        for (let i = 0; i < count; i++) {
-            vector[i] /= magnitude;
-        }
+        this.vector = GestureUtils_1.default.vectorize(this.points, this.sampleCount);
+        this.vectorized = true;
     }
 }
 exports.default = GestureStroke;

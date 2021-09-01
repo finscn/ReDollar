@@ -10,18 +10,16 @@ class GestureTool {
         this.threshold = 0.2;
         this.sampleCount = 16;
         this.orientationCount = 8;
-        this.ratioSensitive = false;
-        this.scaleOBB = false;
         this.scaledSize = 200;
+        this.keepAspectRatio = false;
         this.gesturePool = GesturePool_1.default.getInstance();
     }
     createGesture(points) {
         const stroke = new GestureStroke_1.default();
         stroke.sampleCount = this.sampleCount;
         stroke.orientationCount = this.orientationCount;
-        stroke.ratioSensitive = this.ratioSensitive;
-        stroke.scaleOBB = this.scaleOBB;
         stroke.scaledSize = this.scaledSize;
+        stroke.keepAspectRatio = this.keepAspectRatio;
         stroke.init(points);
         return stroke;
     }
@@ -61,7 +59,8 @@ class GestureTool {
             let d = Infinity;
             switch (this.similarity) {
                 case GestureUtils_1.Similarity.Euclidean:
-                    d = GestureUtils_1.default.euclideanDistanceSquared(vector, gesture);
+                    const points = vector;
+                    d = GestureUtils_1.default.squaredEuclideanDistance(points, gesture.points);
                     break;
                 case GestureUtils_1.Similarity.Cos:
                     d = GestureUtils_1.default.cosineDistance(vector, gesture);

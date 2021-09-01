@@ -91,7 +91,7 @@ export default class GestureUtils {
         let distanceSoFar = 0
 
         const outputPoints: Point[] = [
-            [lastX, lastY]
+            [lastX | 0, lastY | 0]
         ]
 
         for (let i = 1; i < count;) {
@@ -108,7 +108,7 @@ export default class GestureUtils {
                 lastX = nx
                 lastY = ny
                 distanceSoFar = 0
-                outputPoints.push([nx, ny])
+                outputPoints.push([nx | 0, ny | 0])
             } else {
                 lastX = currentX
                 lastY = currentY
@@ -118,20 +118,44 @@ export default class GestureUtils {
         }
 
         for (let i = outputPoints.length; i < sampleCount; i++) {
-            outputPoints.push([lastX, lastY])
+            outputPoints.push([lastX | 0, lastY | 0])
         }
 
         return outputPoints
     }
 
-    static euclideanDistanceSquared(vector1: number[], vector2: number[]): number {
-        let squaredDistance = 0
-        const size = vector1.length
-        for (let i = 0; i < size; i++) {
-            const difference = vector1[i] - vector2[i]
-            squaredDistance += difference * difference
+    static vectorize(points: Point[], sampleCount: number): number[] {
+        const vector = []
+
+        let sum = 0
+        let count = sampleCount
+        for (let i = 0; i < count; i++) {
+            const p = points[i]
+            const x = p[0]
+            const y = p[1]
+            vector.push(x, y)
+            sum += x * x + y * y
         }
-        return squaredDistance / size
+        const magnitude = Math.sqrt(sum)
+        count <<= 1
+        for (let i = 0; i < count; i++) {
+            vector[i] /= magnitude
+        }
+
+        return vector
+    }
+
+    static squaredEuclideanDistance(points1: Point[], points2: Point[]): number {
+        let squaredDistance = 0
+        const count = points1.length
+        for (let i = 0; i < count; i++) {
+            const p1 = points1[i]
+            const p2 = points2[i]
+            const dx = p1[0] - p2[0]
+            const dy = p1[1] - p2[1]
+            squaredDistance += dx * dx + dy * dy
+        }
+        return squaredDistance
     }
 
     static cosineDistance(vector1: number[], vector2: number[]): number {
@@ -166,7 +190,7 @@ export default class GestureUtils {
         return Math.acos(a * cosine + b * sine)
     }
 
-    private static computeCoVariance(points: Point[]): number[][] {
+    private static computeCovarianceMatrix(points: Point[]): number[][] {
         const array: number[][] = [
             [0, 0],
             [0, 0]
@@ -178,9 +202,11 @@ export default class GestureUtils {
             const y = points[i][1]
             array[0][0] += x * x
             array[0][1] += x * y
-            array[1][0] = array[0][1]
+            // array[1][0] = array[0][1]
             array[1][1] += y * y
         }
+        array[1][0] = array[0][1]
+
         array[0][0] /= count
         array[0][1] /= count
         array[1][0] /= count
@@ -213,40 +239,46 @@ export default class GestureUtils {
     }
 
     static computeOBB(points: Point[]): number[] {
-        const array: number[][] = this.computeCoVariance(points)
-        const targetVector: number[] = this.computeOrientation(array)
+        const matrix: number[][] = this.computeCovarianceMatrix(points)
+        const targetVector: number[] = this.computeOrientation(matrix)
         let angle: number
         if (targetVector[0] === 0 && targetVector[1] === 0) {
-            angle = - Math.PI / 2
+            angle = -Math.PI / 2
         } else { // -PI < alpha < PI
             angle = Math.atan2(targetVector[1], targetVector[0])
         }
 
-        this.rotate(points, -angle)
+        const cos = Math.cos(-angle)
+        const sin = Math.sin(-angle)
 
-        let minX: number = Number.MAX_VALUE
-        let minY: number = Number.MAX_VALUE
-        let maxX: number = Number.MIN_VALUE
-        let maxY: number = Number.MIN_VALUE
+        let minX: number = Infinity
+        let minY: number = Infinity
+        let maxX: number = -Infinity
+        let maxY: number = -Infinity
+
         const count = points.length
         for (let i = 0; i < count; i++) {
             const p = points[i]
-            if (p[0] < minX) {
-                minX = p[0]
+            const x = p[0] * cos - p[1] * sin
+            const y = p[0] * sin + p[1] * cos
+            if (x < minX) {
+                minX = x
             }
-            if (p[0] > maxX) {
-                maxX = p[0]
+            if (x > maxX) {
+                maxX = x
             }
-            if (p[1] < minY) {
-                minY = p[1]
+            if (y < minY) {
+                minY = y
             }
-            if (p[1] > maxY) {
-                maxY = p[1]
+            if (y > maxY) {
+                maxY = y
             }
         }
 
         return [
             angle,
+            minX,
+            minY,
             maxX - minX,
             maxY - minY
         ]

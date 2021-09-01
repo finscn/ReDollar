@@ -61,12 +61,9 @@ const TWO_PI = Math.PI * 2;
 class GestureStroke {
     constructor() {
         this.sampleCount = 16;
-        this.scaleOBB = true;
         this.orientationCount = 1;
-        this.ratioSensitive = false;
         this.scaledSize = 200;
-        // useAngleInvariance
-        // useBoundedRotationInvariance
+        this.keepAspectRatio = false;
         this.id = null;
     }
     init(inputPoints) {
@@ -75,18 +72,6 @@ class GestureStroke {
         this.resampled = false;
         this.translated = false;
         this.rotated = false;
-    }
-    transform() {
-        this.translate();
-        if (this.scaleOBB) {
-            this.scale();
-            this.rotate();
-        }
-        else {
-            this.rotate();
-            this.scale();
-        }
-        this.resample();
     }
     translate() {
         let inputPoints;
@@ -106,81 +91,89 @@ class GestureStroke {
     }
     rotate() {
         // 旋转
-        this.angle = this.computeAngle();
+        this.angle = this.computeIndicativeAngle();
         GestureUtils_1.default.rotate(this.points, -this.angle);
         this.rotated = true;
     }
     scale() {
-        if (this.ratioSensitive) {
-            return;
-        }
         const points = this.points;
         // 计算AABB/OBB
-        let width;
-        let height;
-        let angle = 0;
-        if (this.scaleOBB) {
-            const obb = GestureUtils_1.default.computeOBB(points);
-            angle = obb[0];
-            width = obb[1];
-            height = obb[2];
-            console.log(obb);
+        const aabb = GestureUtils_1.default.computeAABB(points);
+        const width = aabb[2];
+        const height = aabb[3];
+        let scaleX;
+        let scaleY;
+        if (this.keepAspectRatio) {
+            if (width > height) {
+                scaleX = this.scaledSize / width;
+                scaleY = scaleX;
+            }
+            else {
+                scaleY = this.scaledSize / height;
+                scaleX = scaleY;
+            }
         }
         else {
-            const aabb = GestureUtils_1.default.computeAABB(points);
-            width = aabb[2];
-            height = aabb[3];
+            scaleX = this.scaledSize / width;
+            scaleY = this.scaledSize / height;
         }
         // 缩放AABB/OBB
+        GestureUtils_1.default.scale(points, scaleX, scaleY);
+        this.scaled = true;
+    }
+    rotateOBB() {
+        const points = this.points;
+        const obb = this.obb = this.obb || GestureUtils_1.default.computeOBB(points);
+        // 旋转
+        const angle = obb[0];
+        this.angle = this.fixAngle(angle);
+        GestureUtils_1.default.rotate(points, -this.angle);
+        this.rotated = true;
+    }
+    scaleOBB() {
+        const points = this.points;
+        const obb = this.obb = this.obb || GestureUtils_1.default.computeOBB(points);
+        const angle = obb[0];
+        const width = obb[3];
+        const height = obb[4];
+        GestureUtils_1.default.rotate(points, -angle);
         const scaleX = this.scaledSize / width;
         const scaleY = this.scaledSize / height;
         GestureUtils_1.default.scale(points, scaleX, scaleY);
-        if (this.scaleOBB) {
-            GestureUtils_1.default.rotate(points, angle);
-        }
-        this.scaled = true;
+        GestureUtils_1.default.rotate(points, -angle);
     }
     resample() {
         const inputPoints = this.points || this.inputPoints;
         this.points = GestureUtils_1.default.resample(inputPoints, this.sampleCount);
         this.resampled = true;
     }
-    computeAngle(centroid) {
+    computeIndicativeAngle(centroid) {
         centroid = centroid || [0, 0];
         const first = this.points[0];
         let angle = Math.atan2(first[1] - centroid[0], first[0] - centroid[1]);
-        if (this.orientationCount > 1) {
-            if (angle < 0) {
-                angle = TWO_PI + angle;
-            }
-            const sector = TWO_PI / this.orientationCount;
-            // console.log(sector * 180 / Math.PI, angle * 180 / Math.PI)
-            const baseOrientation = Math.round(angle / sector) * sector;
-            angle = angle - baseOrientation;
-            // console.log(baseOrientation * 180 / Math.PI, angle * 180 / Math.PI)
+        angle = this.fixAngle(angle);
+        return this.fixAngle(angle);
+    }
+    fixAngle(angle) {
+        if (this.orientationCount <= 1) {
+            return angle;
         }
+        if (angle < 0) {
+            angle = TWO_PI + angle;
+        }
+        const sector = TWO_PI / this.orientationCount;
+        // console.log(sector * 180 / Math.PI, angle * 180 / Math.PI)
+        const baseOrientation = Math.round(angle / sector) * sector;
+        angle = angle - baseOrientation;
+        // console.log(baseOrientation * 180 / Math.PI, angle * 180 / Math.PI)
         return angle;
     }
     vectorize() {
         if (!this.points) {
             return;
         }
-        const vector = this.vector = this.vector || [];
-        vector.length = 0;
-        let sum = 0;
-        let count = this.sampleCount;
-        for (let i = 0; i < count; i++) {
-            const p = this.points[i];
-            const x = p[0];
-            const y = p[1];
-            vector.push(x, y);
-            sum += x * x + y * y;
-        }
-        const magnitude = Math.sqrt(sum);
-        count <<= 1;
-        for (let i = 0; i < count; i++) {
-            vector[i] /= magnitude;
-        }
+        this.vector = GestureUtils_1.default.vectorize(this.points, this.sampleCount);
+        this.vectorized = true;
     }
 }
 exports.default = GestureStroke;
@@ -267,7 +260,7 @@ class GestureUtils {
         let lastY = inputPoints[0][1];
         let distanceSoFar = 0;
         const outputPoints = [
-            [lastX, lastY]
+            [lastX | 0, lastY | 0]
         ];
         for (let i = 1; i < count;) {
             const currentX = inputPoints[i][0];
@@ -282,7 +275,7 @@ class GestureUtils {
                 lastX = nx;
                 lastY = ny;
                 distanceSoFar = 0;
-                outputPoints.push([nx, ny]);
+                outputPoints.push([nx | 0, ny | 0]);
             }
             else {
                 lastX = currentX;
@@ -292,18 +285,39 @@ class GestureUtils {
             }
         }
         for (let i = outputPoints.length; i < sampleCount; i++) {
-            outputPoints.push([lastX, lastY]);
+            outputPoints.push([lastX | 0, lastY | 0]);
         }
         return outputPoints;
     }
-    static euclideanDistanceSquared(vector1, vector2) {
-        let squaredDistance = 0;
-        const size = vector1.length;
-        for (let i = 0; i < size; i++) {
-            const difference = vector1[i] - vector2[i];
-            squaredDistance += difference * difference;
+    static vectorize(points, sampleCount) {
+        const vector = [];
+        let sum = 0;
+        let count = sampleCount;
+        for (let i = 0; i < count; i++) {
+            const p = points[i];
+            const x = p[0];
+            const y = p[1];
+            vector.push(x, y);
+            sum += x * x + y * y;
         }
-        return squaredDistance / size;
+        const magnitude = Math.sqrt(sum);
+        count <<= 1;
+        for (let i = 0; i < count; i++) {
+            vector[i] /= magnitude;
+        }
+        return vector;
+    }
+    static squaredEuclideanDistance(points1, points2) {
+        let squaredDistance = 0;
+        const count = points1.length;
+        for (let i = 0; i < count; i++) {
+            const p1 = points1[i];
+            const p2 = points2[i];
+            const dx = p1[0] - p2[0];
+            const dy = p1[1] - p2[1];
+            squaredDistance += dx * dx + dy * dy;
+        }
+        return squaredDistance;
     }
     static cosineDistance(vector1, vector2) {
         let sum = 0;
@@ -333,7 +347,7 @@ class GestureUtils {
         const sine = cosine * tan;
         return Math.acos(a * cosine + b * sine);
     }
-    static computeCoVariance(points) {
+    static computeCovarianceMatrix(points) {
         const array = [
             [0, 0],
             [0, 0]
@@ -344,9 +358,10 @@ class GestureUtils {
             const y = points[i][1];
             array[0][0] += x * x;
             array[0][1] += x * y;
-            array[1][0] = array[0][1];
+            // array[1][0] = array[0][1]
             array[1][1] += y * y;
         }
+        array[1][0] = array[0][1];
         array[0][0] /= count;
         array[0][1] /= count;
         array[1][0] /= count;
@@ -378,8 +393,8 @@ class GestureUtils {
         return targetVector;
     }
     static computeOBB(points) {
-        const array = this.computeCoVariance(points);
-        const targetVector = this.computeOrientation(array);
+        const matrix = this.computeCovarianceMatrix(points);
+        const targetVector = this.computeOrientation(matrix);
         let angle;
         if (targetVector[0] === 0 && targetVector[1] === 0) {
             angle = -Math.PI / 2;
@@ -387,29 +402,34 @@ class GestureUtils {
         else { // -PI < alpha < PI
             angle = Math.atan2(targetVector[1], targetVector[0]);
         }
-        this.rotate(points, -angle);
-        let minX = Number.MAX_VALUE;
-        let minY = Number.MAX_VALUE;
-        let maxX = Number.MIN_VALUE;
-        let maxY = Number.MIN_VALUE;
+        const cos = Math.cos(-angle);
+        const sin = Math.sin(-angle);
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
         const count = points.length;
         for (let i = 0; i < count; i++) {
             const p = points[i];
-            if (p[0] < minX) {
-                minX = p[0];
+            const x = p[0] * cos - p[1] * sin;
+            const y = p[0] * sin + p[1] * cos;
+            if (x < minX) {
+                minX = x;
             }
-            if (p[0] > maxX) {
-                maxX = p[0];
+            if (x > maxX) {
+                maxX = x;
             }
-            if (p[1] < minY) {
-                minY = p[1];
+            if (y < minY) {
+                minY = y;
             }
-            if (p[1] > maxY) {
-                maxY = p[1];
+            if (y > maxY) {
+                maxY = y;
             }
         }
         return [
             angle,
+            minX,
+            minY,
             maxX - minX,
             maxY - minY
         ];
@@ -493,18 +513,16 @@ class GestureTool {
         this.threshold = 0.2;
         this.sampleCount = 16;
         this.orientationCount = 8;
-        this.ratioSensitive = false;
-        this.scaleOBB = false;
         this.scaledSize = 200;
+        this.keepAspectRatio = false;
         this.gesturePool = GesturePool_1.default.getInstance();
     }
     createGesture(points) {
         const stroke = new GestureStroke_1.default();
         stroke.sampleCount = this.sampleCount;
         stroke.orientationCount = this.orientationCount;
-        stroke.ratioSensitive = this.ratioSensitive;
-        stroke.scaleOBB = this.scaleOBB;
         stroke.scaledSize = this.scaledSize;
+        stroke.keepAspectRatio = this.keepAspectRatio;
         stroke.init(points);
         return stroke;
     }
@@ -544,7 +562,8 @@ class GestureTool {
             let d = Infinity;
             switch (this.similarity) {
                 case GestureUtils_1.Similarity.Euclidean:
-                    d = GestureUtils_1.default.euclideanDistanceSquared(vector, gesture);
+                    const points = vector;
+                    d = GestureUtils_1.default.squaredEuclideanDistance(points, gesture.points);
                     break;
                 case GestureUtils_1.Similarity.Cos:
                     d = GestureUtils_1.default.cosineDistance(vector, gesture);

@@ -5,18 +5,15 @@ import GestureUtils, { Similarity } from "./GestureUtils"
 class GestureTool {
 
     saveKey = "GesturePool"
+    gesturePool: GesturePool
 
     similarity = Similarity.OptimalCos
-
     threshold = 0.2
 
     sampleCount = 16
     orientationCount = 8
-    ratioSensitive = false
-    scaleOBB = false
     scaledSize = 200
-
-    gesturePool: GesturePool
+    keepAspectRatio = false
 
     constructor() {
         this.gesturePool = GesturePool.getInstance()
@@ -26,9 +23,8 @@ class GestureTool {
         const stroke = new GestureStroke()
         stroke.sampleCount = this.sampleCount
         stroke.orientationCount = this.orientationCount
-        stroke.ratioSensitive = this.ratioSensitive
-        stroke.scaleOBB = this.scaleOBB
         stroke.scaledSize = this.scaledSize
+        stroke.keepAspectRatio = this.keepAspectRatio
 
         stroke.init(points)
 
@@ -79,7 +75,8 @@ class GestureTool {
             let d: number = Infinity
             switch (this.similarity) {
                 case Similarity.Euclidean:
-                    d = GestureUtils.euclideanDistanceSquared(vector, (gesture as number[]))
+                    const points = vector as unknown as Point[]
+                    d = GestureUtils.squaredEuclideanDistance(points, (gesture as GestureStroke).points)
                     break
                 case Similarity.Cos:
                     d = GestureUtils.cosineDistance(vector, (gesture as number[]))

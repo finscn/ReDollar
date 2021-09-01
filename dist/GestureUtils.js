@@ -79,7 +79,7 @@ class GestureUtils {
         let lastY = inputPoints[0][1];
         let distanceSoFar = 0;
         const outputPoints = [
-            [lastX, lastY]
+            [lastX | 0, lastY | 0]
         ];
         for (let i = 1; i < count;) {
             const currentX = inputPoints[i][0];
@@ -94,7 +94,7 @@ class GestureUtils {
                 lastX = nx;
                 lastY = ny;
                 distanceSoFar = 0;
-                outputPoints.push([nx, ny]);
+                outputPoints.push([nx | 0, ny | 0]);
             }
             else {
                 lastX = currentX;
@@ -104,18 +104,39 @@ class GestureUtils {
             }
         }
         for (let i = outputPoints.length; i < sampleCount; i++) {
-            outputPoints.push([lastX, lastY]);
+            outputPoints.push([lastX | 0, lastY | 0]);
         }
         return outputPoints;
     }
-    static euclideanDistanceSquared(vector1, vector2) {
-        let squaredDistance = 0;
-        const size = vector1.length;
-        for (let i = 0; i < size; i++) {
-            const difference = vector1[i] - vector2[i];
-            squaredDistance += difference * difference;
+    static vectorize(points, sampleCount) {
+        const vector = [];
+        let sum = 0;
+        let count = sampleCount;
+        for (let i = 0; i < count; i++) {
+            const p = points[i];
+            const x = p[0];
+            const y = p[1];
+            vector.push(x, y);
+            sum += x * x + y * y;
         }
-        return squaredDistance / size;
+        const magnitude = Math.sqrt(sum);
+        count <<= 1;
+        for (let i = 0; i < count; i++) {
+            vector[i] /= magnitude;
+        }
+        return vector;
+    }
+    static squaredEuclideanDistance(points1, points2) {
+        let squaredDistance = 0;
+        const count = points1.length;
+        for (let i = 0; i < count; i++) {
+            const p1 = points1[i];
+            const p2 = points2[i];
+            const dx = p1[0] - p2[0];
+            const dy = p1[1] - p2[1];
+            squaredDistance += dx * dx + dy * dy;
+        }
+        return squaredDistance;
     }
     static cosineDistance(vector1, vector2) {
         let sum = 0;
@@ -145,7 +166,7 @@ class GestureUtils {
         const sine = cosine * tan;
         return Math.acos(a * cosine + b * sine);
     }
-    static computeCoVariance(points) {
+    static computeCovarianceMatrix(points) {
         const array = [
             [0, 0],
             [0, 0]
@@ -156,9 +177,10 @@ class GestureUtils {
             const y = points[i][1];
             array[0][0] += x * x;
             array[0][1] += x * y;
-            array[1][0] = array[0][1];
+            // array[1][0] = array[0][1]
             array[1][1] += y * y;
         }
+        array[1][0] = array[0][1];
         array[0][0] /= count;
         array[0][1] /= count;
         array[1][0] /= count;
@@ -190,8 +212,8 @@ class GestureUtils {
         return targetVector;
     }
     static computeOBB(points) {
-        const array = this.computeCoVariance(points);
-        const targetVector = this.computeOrientation(array);
+        const matrix = this.computeCovarianceMatrix(points);
+        const targetVector = this.computeOrientation(matrix);
         let angle;
         if (targetVector[0] === 0 && targetVector[1] === 0) {
             angle = -Math.PI / 2;
@@ -199,29 +221,34 @@ class GestureUtils {
         else { // -PI < alpha < PI
             angle = Math.atan2(targetVector[1], targetVector[0]);
         }
-        this.rotate(points, -angle);
-        let minX = Number.MAX_VALUE;
-        let minY = Number.MAX_VALUE;
-        let maxX = Number.MIN_VALUE;
-        let maxY = Number.MIN_VALUE;
+        const cos = Math.cos(-angle);
+        const sin = Math.sin(-angle);
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
         const count = points.length;
         for (let i = 0; i < count; i++) {
             const p = points[i];
-            if (p[0] < minX) {
-                minX = p[0];
+            const x = p[0] * cos - p[1] * sin;
+            const y = p[0] * sin + p[1] * cos;
+            if (x < minX) {
+                minX = x;
             }
-            if (p[0] > maxX) {
-                maxX = p[0];
+            if (x > maxX) {
+                maxX = x;
             }
-            if (p[1] < minY) {
-                minY = p[1];
+            if (y < minY) {
+                minY = y;
             }
-            if (p[1] > maxY) {
-                maxY = p[1];
+            if (y > maxY) {
+                maxY = y;
             }
         }
         return [
             angle,
+            minX,
+            minY,
             maxX - minX,
             maxY - minY
         ];
