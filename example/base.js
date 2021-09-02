@@ -440,7 +440,7 @@ function setOrientationCount(target) {
     if (!target) {
         const orientationCount = loadData('orientationCount')
         gestureTool.orientationCount = Number(orientationCount) || 1
-        $id('toggleOrientation') && ($id('toggleOrientation').value = gestureTool.orientationCount)
+        $id('setOrientationCount') && ($id('setOrientationCount').value = gestureTool.orientationCount)
         return
     }
     console.log(target.id, target.value)
@@ -537,7 +537,6 @@ function doRotate() {
 
     var c1 = GestureUtils.computeCentroid(Points)
 
-
     if (Config.rotateOBB) {
         CurrentGesture.rotateOBB()
     } else {
@@ -549,11 +548,7 @@ function doRotate() {
     var dx = c1[0] - c0[0]
     var dy = c1[1] - c0[1]
 
-    if (CurrentGesture.translated) {
-        Centroid = [0, 0]
-    } else {
-        Centroid = [c1[0], c1[1]]
-    }
+    Centroid = [c1[0], c1[1]]
 
     Points = []
     CurrentGesture.points.forEach(function (p) {

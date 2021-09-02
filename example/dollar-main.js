@@ -10,14 +10,14 @@ function transform() {
     if (!CurrentGesture.resampled) {
         CurrentGesture.resample()
     }
+    if (!CurrentGesture.translated) {
+        CurrentGesture.translate()
+    }
     if (!CurrentGesture.rotated) {
         CurrentGesture.rotate()
     }
     if (!CurrentGesture.scaled) {
         CurrentGesture.scale()
-    }
-    if (!CurrentGesture.translated) {
-        CurrentGesture.translate()
     }
 
 }
