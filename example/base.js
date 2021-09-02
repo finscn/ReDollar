@@ -363,13 +363,13 @@ function addGesture() {
 }
 
 
-function testGesture(transform) {
+function testGesture() {
+    MatchGesture = null
     if (!CurrentGesture) {
         return
     }
-    if (transform) {
+    if (!CurrentGesture.resampled) {
         transform()
-        step = 4
         Points = CurrentGesture.points
         Centroid = [0, 0]
     }
@@ -446,6 +446,8 @@ function setKeepAspectRatio(target) {
     if (!target) {
         const keepAspectRatio = loadData('keepAspectRatio')
         gestureTool.keepAspectRatio = keepAspectRatio === 'true' ? true : false
+        CurrentGesture && (CurrentGesture.keepAspectRatio = gestureTool.keepAspectRatio);
+
         $id('setKeepAspectRatio') && ($id('setKeepAspectRatio').checked = gestureTool.keepAspectRatio)
 
         // $id('doScale').disabled = gestureTool.keepAspectRatio
@@ -453,6 +455,7 @@ function setKeepAspectRatio(target) {
     }
     console.log(target.id, target.checked)
     gestureTool.keepAspectRatio = !!target.checked
+    CurrentGesture && (CurrentGesture.keepAspectRatio = gestureTool.keepAspectRatio);
     saveData('keepAspectRatio', gestureTool.keepAspectRatio)
 
     // $id('doScale').disabled = gestureTool.keepAspectRatio

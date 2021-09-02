@@ -137,8 +137,22 @@ class GestureStroke {
         const width = obb[3];
         const height = obb[4];
         GestureUtils_1.default.rotate(points, -angle);
-        const scaleX = this.scaledSize / width;
-        const scaleY = this.scaledSize / height;
+        let scaleX;
+        let scaleY;
+        if (this.keepAspectRatio) {
+            if (width > height) {
+                scaleX = this.scaledSize / width;
+                scaleY = scaleX;
+            }
+            else {
+                scaleY = this.scaledSize / height;
+                scaleX = scaleY;
+            }
+        }
+        else {
+            scaleX = this.scaledSize / width;
+            scaleY = this.scaledSize / height;
+        }
         GestureUtils_1.default.scale(points, scaleX, scaleY);
         GestureUtils_1.default.rotate(points, -angle);
     }

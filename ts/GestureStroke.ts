@@ -92,6 +92,7 @@ export default class GestureStroke {
             scaleY = this.scaledSize / height
         }
 
+
         // 缩放AABB/OBB
         GestureUtils.scale(points, scaleX, scaleY)
 
@@ -117,8 +118,22 @@ export default class GestureStroke {
         const width = obb[3]
         const height = obb[4]
         GestureUtils.rotate(points, -angle)
-        const scaleX = this.scaledSize / width
-        const scaleY = this.scaledSize / height
+
+        let scaleX: number
+        let scaleY: number
+        if (this.keepAspectRatio) {
+            if (width > height) {
+                scaleX = this.scaledSize / width
+                scaleY = scaleX
+            } else {
+                scaleY = this.scaledSize / height
+                scaleX = scaleY
+            }
+        } else {
+            scaleX = this.scaledSize / width
+            scaleY = this.scaledSize / height
+        }
+
         GestureUtils.scale(points, scaleX, scaleY)
         GestureUtils.rotate(points, -angle)
     }
