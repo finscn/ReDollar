@@ -3,15 +3,10 @@
 Config.saveKey = "Dollar_GestureTemplate"
 Config.storePrefix = "Dollar"
 
-
-
 function transform() {
     if (!CurrentGesture) {
         return
     }
-    // if (!CurrentGesture.translated) {
-    //     CurrentGesture.translate()
-    // }
     if (!CurrentGesture.resampled) {
         CurrentGesture.resample()
     }

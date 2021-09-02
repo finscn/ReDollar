@@ -1,9 +1,7 @@
 "use strick";
 
-
 Config.saveKey = "GestureTemplate"
 Config.storePrefix = ""
-
 
 function transform() {
     if (!CurrentGesture) {

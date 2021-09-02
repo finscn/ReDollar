@@ -268,6 +268,7 @@ function initGame() {
 }
 
 function init() {
+    gestureTool.saveKey = Config.saveKey
     for (var p in Config.default) {
         gestureTool[p] = Config.default[p]
     }
@@ -342,15 +343,21 @@ function addGesture() {
         return;
     }
 
-    transform()
+    if (!CurrentGesture.resampled) {
+        transform()
+        Points = []
+        CurrentGesture.points.forEach(function (p) {
+            Points.push([p[0], p[1]])
+        })
+    }
 
     var name = null; // prompt("手势名称", "");
     if (!name) {
         name = 'N_' + Object.keys(RecordPoints).length
     }
 
-    this.gestureTool.addGesture(name, CurrentGesture)
-    this.gestureTool.saveGestures();
+    gestureTool.addGesture(name, CurrentGesture)
+    gestureTool.saveGestures();
 
     RecordPoints[name] = CurrentGesture.points
     saveData('RecordPoints', JSON.stringify(RecordPoints))
@@ -528,7 +535,8 @@ function doRotate() {
         return
     }
 
-    var c1 = GestureUtils.computeCentroid(CurrentGesture.points)
+    var c1 = GestureUtils.computeCentroid(Points)
+
 
     if (Config.rotateOBB) {
         CurrentGesture.rotateOBB()
@@ -536,16 +544,20 @@ function doRotate() {
         CurrentGesture.rotate()
     }
 
-    var c0 = GestureUtils.computeCentroid(Points)
+    var c0 = GestureUtils.computeCentroid(CurrentGesture.points)
 
     var dx = c1[0] - c0[0]
     var dy = c1[1] - c0[1]
 
-    Centroid = [0, 0]
+    if (CurrentGesture.translated) {
+        Centroid = [0, 0]
+    } else {
+        Centroid = [c1[0], c1[1]]
+    }
 
     Points = []
     CurrentGesture.points.forEach(function (p) {
-        Points.push([p[0] - dx, p[1] - dy])
+        Points.push([p[0] + dx, p[1] + dy])
     })
     if (obbRect) {
         GestureUtils.rotate(obbRect, -CurrentGesture.angle)
@@ -695,19 +707,5 @@ function getAABBRect(aabb) {
 }
 
 function transform() {
-    CurrentGesture.translate()
-
-    if (Config.rotateOBB) {
-        CurrentGesture.rotateOBB()
-    } else {
-        CurrentGesture.rotate()
-    }
-
-    if (Config.scaleOBB) {
-        CurrentGesture.scaleOBB()
-    } else {
-        CurrentGesture.scale()
-    }
-
-    CurrentGesture.resample()
+    console.warn("No valid `transform()` .")
 }
